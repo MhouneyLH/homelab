@@ -1,0 +1,1 @@
+- [ ] Using a device as [TinyPilot](https://tinypilotkvm.com/) to control devices of homelab remotely
