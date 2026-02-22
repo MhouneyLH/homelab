@@ -9,6 +9,10 @@ My homelab setup all in one repository. :)
 ´´´bash
 talosctl get disks -n 10.0.0.220 --insecure # list disks of the node - nice for finding out which disk is the one you want to install Talos on
 
+terraform output -raw kubeconfig > ~/.kube/config # export kubeconfig from terraform output
+chmod 600 ~/.kube/config # set permissions for kubeconfig
+kubectl get nodes # verify cluster access
+
 mkdir -p ~/.talos
 talosctl dashboard -n 10.0.0.220 # when endpoint for talosctl is defined in config
 
