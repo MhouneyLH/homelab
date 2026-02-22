@@ -1,9 +1,8 @@
 # homelab
+
 My homelab setup all in one repository. :)
 
 ## Tech Stack
-
-
 
 ## Development
 
@@ -11,16 +10,20 @@ My homelab setup all in one repository. :)
 talosctl get disks -n 10.0.0.220 --insecure # list disks of the node - nice for finding out which disk is the one you want to install Talos on
 
 mkdir -p ~/.talos
-terraform output -raw talosconfig > ~/.talos/config
-
-talosctl dashboard -n 10.0.0.220 -e 10.0.0.220 # when not having defined endpoint in the config, you can specify it here explicitly
-
 talosctl dashboard -n 10.0.0.220 # when endpoint for talosctl is defined in config
 
 talosctl config info
 
 # getting hardware info of a node
-talosctl get hardware -n 10.0.0.220
+talosctl get systemInformation -n 10.0.0.220
+
+# getting MAC address of a node
+talosctl get links -n 10.0.0.220
+
+# editing the machine configuration manually (sadly not possible to adjust the hostname on this way; for this you have to connect directly with the node and edit network config there)
+talosctl -n 10.0.0.228 edit mc --mode=staged
+
+talosctl get members
 ´´´
 
 ## References

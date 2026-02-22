@@ -1,7 +1,6 @@
 locals {
   node_ip = "10.0.0.220"
   cluster_endpoint = "https://10.0.0.220:6443"
-  cluster_name = "hl-cluster"
   talos_install_disk = "/dev/sda"
   hostname = "hl-controlplane"
 }
@@ -34,9 +33,9 @@ resource "talos_machine_configuration_apply" "controlplane" {
         install = {
           disk = local.talos_install_disk
         }
-        network = {
-          hostname = local.hostname
-        }
+        # network = {
+        #   hostname = local.hostname
+        # }
       }
     })
   ]
