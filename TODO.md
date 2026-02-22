@@ -1,1 +1,8 @@
 - [ ] Using a device as [TinyPilot](https://tinypilotkvm.com/) to control devices of homelab remotely
+- [ ] Setup Grafana for viewing dashboards
+- [ ] Setup Prometheus operator for metrics collection
+- [ ] Setup elastic for log collection
+- [ ] Setup n8n for workflow automation
+- [ ] Setup Home Assistant for home automation
+- [ ] Create Api for retrieving data from height-adjustable desk
+- [ ] host mqtt broker for managing messages from iot devices

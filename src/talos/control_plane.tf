@@ -1,8 +1,8 @@
 locals {
-  node_ip = "10.0.0.220"
-  cluster_endpoint = "https://10.0.0.220:6443"
+  node_ip            = "10.0.0.220"
+  cluster_endpoint   = "https://10.0.0.220:6443"
   talos_install_disk = "/dev/sda"
-  hostname = "hl-controlplane"
+  hostname           = "hl-controlplane"
 }
 
 resource "talos_machine_secrets" "controlplane" {
@@ -51,5 +51,17 @@ resource "talos_machine_bootstrap" "controlplane" {
 # for reading out the generated config for being able to use it with talosctl locally
 output "talosconfig" {
   value     = data.talos_client_configuration.controlplane.talos_config
+  sensitive = true
+}
+
+# kubeconfig for accessing the kubernetes cluster
+data "talos_cluster_kubeconfig" "controlplane" {
+  client_configuration = talos_machine_secrets.controlplane.client_configuration
+  node                 = local.node_ip
+  depends_on           = [talos_machine_bootstrap.controlplane]
+}
+
+output "kubeconfig" {
+  value     = data.talos_cluster_kubeconfig.controlplane.kubeconfig_raw
   sensitive = true
 }
