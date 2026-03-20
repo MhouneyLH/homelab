@@ -1,0 +1,10 @@
+---
+adminUser: admin
+adminPassword: "admin"
+
+# Ensure we don't use an existing secret
+admin:
+  existingSecret: ""
+
+# only 2 replicasets with 0 replicas set for rollback purposes
+revisionHistoryLimit: 2
