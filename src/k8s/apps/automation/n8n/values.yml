@@ -1,6 +1,7 @@
 ---
 service:
   type: NodePort
-  nodePort: 30080 # the port that is exposed on the node (we will use this to access the service from outside the cluster)
-  port: 5678 # the port that the service will listen on
-  targetPort: 5678 # the port that the application is listening on
+  port: 5678
+
+nodeSelector:
+  kubernetes.io/hostname: hl-worker-01
