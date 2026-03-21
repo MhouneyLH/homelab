@@ -5,3 +5,6 @@ service:
 
 nodeSelector:
   kubernetes.io/hostname: hl-worker-01
+
+extraEnvVars:
+  N8N_SECURE_COOKIE: "false"
