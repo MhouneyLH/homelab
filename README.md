@@ -6,10 +6,11 @@ My homelab setup all in one repository. :)
 
 ### Hardware
 
-
 ### Software
+
 - distro: Talos Linux(https://docs.siderolabs.com/talos/v1.9/platform-specific-installations/bare-metal-platforms/iso)
 - provisioning infrastructure: Terraform (using the )=))(/Talos Provider)
+
 ## Development
 
 ´´´bash
@@ -25,12 +26,15 @@ talosctl dashboard -n 10.0.0.220 # when endpoint for talosctl is defined in conf
 talosctl config info
 
 # getting hardware info of a node
+
 talosctl get systemInformation -n 10.0.0.220
 
 # getting MAC address of a node
+
 talosctl get links -n 10.0.0.220
 
 # editing the machine configuration manually (sadly not possible to adjust the hostname on this way; for this you have to connect directly with the node and edit network config there)
+
 talosctl -n 10.0.0.228 edit mc --mode=staged
 
 talosctl get members
@@ -45,3 +49,5 @@ https://www.ventoy.net/en/download.html
 https://registry.terraform.io/providers/siderolabs/talos/latest/docs
 
 https://docs.siderolabs.com/talos/v1.12/getting-started/talosctl#alternative-install
+
+https://community-charts.github.io/

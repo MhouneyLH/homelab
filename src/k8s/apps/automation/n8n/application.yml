@@ -2,19 +2,19 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: grafana
+  name: n8n
   namespace: argocd
 spec:
   project: default
 
   sources:
-    - repoURL: https://grafana-community.github.io/helm-charts
-      chart: grafana
-      targetRevision: "11.3.3"
+    - repoURL: https://community-charts.github.io/helm-charts
+      chart: n8n
+      targetRevision: "1.16.31"
       helm:
-        releaseName: grafana
+        releaseName: n8n
         valueFiles:
-          - $values/src/k8s/apps/monitoring/grafana/values.yml
+          - $values/src/k8s/apps/automation/n8n/values.yml
 
     - repoURL: https://github.com/MhouneyLH/homelab.git
       targetRevision: master
@@ -22,7 +22,7 @@ spec:
 
   destination:
     server: https://kubernetes.default.svc
-    namespace: monitoring
+    namespace: automation
 
   syncPolicy:
     automated:
