@@ -1,0 +1,11 @@
+---
+nodeSelector:
+  kubernetes.io/hostname: hl-worker-01
+
+services:
+  - type: mqtt
+    exposed: true
+    containerPort: 1883 # the port of the MQTT service inside the cluster
+    port: 1883 # the port to expose outside the cluster
+    serviceType: NodePort
+    # nodePort will be auto-assigned by Kubernetes in range 30000-32767
