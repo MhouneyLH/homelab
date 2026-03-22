@@ -1,0 +1,21 @@
+---
+# Metrics-server configuration for Talos
+args:
+  - --kubelet-insecure-tls  # Required for Talos clusters
+  - --kubelet-preferred-address-types=InternalIP
+
+# Resource configuration for homelab
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 200m
+    memory: 128Mi
+
+# High availability (optional, can be 1 for homelab)
+replicas: 1
+
+# Node affinity (optional)
+nodeSelector:
+  kubernetes.io/hostname: hl-worker-01

@@ -1,0 +1,34 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: opentelemetry-collector
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1" # Deploy with monitoring stack
+spec:
+  project: default
+
+  sources:
+    - repoURL: https://open-telemetry.github.io/opentelemetry-helm-charts
+      chart: opentelemetry-collector
+      targetRevision: "0.147.1"
+      helm:
+        releaseName: otelc
+        valueFiles:
+          - $values/src/k8s/apps/monitoring/opentelemetry/values.yml
+
+    - repoURL: https://github.com/MhouneyLH/homelab.git
+      targetRevision: master
+      ref: values
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

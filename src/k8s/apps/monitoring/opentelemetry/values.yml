@@ -1,0 +1,93 @@
+---
+# Simple OpenTelemetry Collector configuration
+mode: deployment
+replicaCount: 1
+
+# Run on worker node
+nodeSelector:
+  kubernetes.io/hostname: hl-worker-01
+
+# Resource limits for homelab
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+# Service configuration
+service:
+  type: ClusterIP
+  ports:
+    - name: otlp-grpc
+      port: 4317
+      targetPort: 4317
+      protocol: TCP
+    - name: otlp-http
+      port: 4318
+      targetPort: 4318
+      protocol: TCP
+    - name: metrics
+      port: 8889
+      targetPort: 8889
+      protocol: TCP
+
+# OpenTelemetry Collector configuration
+config:
+  receivers:
+    # Receive OTLP traces and metrics
+    otlp:
+      protocols:
+        grpc:
+          endpoint: 0.0.0.0:4317
+        http:
+          endpoint: 0.0.0.0:4318
+
+    # Scrape Kubernetes kubelet metrics
+    kubeletstats:
+      collection_interval: 30s
+      auth_type: "serviceAccount"
+      endpoint: "https://${env:K8S_NODE_IP}:10250"
+      insecure_skip_verify: true
+
+  processors:
+    # Simple batch processing
+    batch:
+      timeout: 5s
+      send_batch_size: 512
+
+  exporters:
+    # Export metrics in Prometheus format
+    prometheus:
+      endpoint: "0.0.0.0:8889"
+      namespace: "otelc"
+
+    # Log traces and metrics for debugging
+    logging:
+      loglevel: info
+
+  service:
+    pipelines:
+      # Metrics pipeline
+      metrics:
+        receivers: [otlp, kubeletstats]
+        processors: [batch]
+        exporters: [prometheus, logging]
+
+      # Traces pipeline
+      traces:
+        receivers: [otlp]
+        processors: [batch]
+        exporters: [logging]
+
+      # Logs pipeline
+      logs:
+        receivers: [otlp]
+        processors: [batch]
+        exporters: [logging]
+
+# Service monitor for Prometheus to scrape OTel metrics
+serviceMonitor:
+  enabled: true
+  interval: 10s

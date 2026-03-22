@@ -51,3 +51,5 @@ https://registry.terraform.io/providers/siderolabs/talos/latest/docs
 https://docs.siderolabs.com/talos/v1.12/getting-started/talosctl#alternative-install
 
 https://community-charts.github.io/
+
+https://github.com/EdJoPaTo/mqttui

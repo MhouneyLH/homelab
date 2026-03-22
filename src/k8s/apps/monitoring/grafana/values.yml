@@ -14,3 +14,53 @@ service:
 
 nodeSelector:
   kubernetes.io/hostname: hl-worker-01
+
+# Configure Prometheus and OpenTelemetry Collector as data sources
+datasources:
+  datasources.yaml:
+    apiVersion: 1
+    datasources:
+    - name: Prometheus
+      type: prometheus
+      url: http://prometheus-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090
+      access: proxy
+      isDefault: true
+
+    - name: OpenTelemetry
+      type: prometheus
+      url: http://otelc-opentelemetry-collector.monitoring.svc.cluster.local:8889
+      access: proxy
+
+# Import some useful dashboards
+dashboardProviders:
+  dashboardproviders.yaml:
+    apiVersion: 1
+    providers:
+    - name: 'default'
+      orgId: 1
+      folder: ''
+      type: file
+      disableDeletion: false
+      editable: true
+      options:
+        path: /var/lib/grafana/dashboards/default
+
+dashboards:
+  default:
+    # Kubernetes cluster overview
+    kubernetes-cluster:
+      gnetId: 7249
+      revision: 1
+      datasource: Prometheus
+
+    # Node exporter dashboard
+    node-exporter:
+      gnetId: 1860
+      revision: 37
+      datasource: Prometheus
+
+    # Pod monitoring
+    kubernetes-pods:
+      gnetId: 6417
+      revision: 1
+      datasource: Prometheus
