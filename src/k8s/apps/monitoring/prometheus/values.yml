@@ -3,6 +3,10 @@
 grafana:
   enabled: false
 
+# Ensure CRD installation is handled properly
+crds:
+  enabled: true
+
 # Prometheus configuration
 prometheus:
   prometheusSpec:
@@ -33,6 +37,21 @@ prometheus:
     retention: "30d"
     retentionSize: "9GB"
 
+    # Disable features that require problematic CRDs
+    enableRemoteWriteReceiver: false
+
+    # Simple rule selector (avoid complex CRD dependencies)
+    ruleSelector: {}
+    ruleNamespaceSelector: {}
+
+    # Simple service monitor selector
+    serviceMonitorSelector: {}
+    serviceMonitorNamespaceSelector: {}
+
+    # Disable scrape configs CRD (this is causing one of the errors)
+    scrapeConfigSelector: {}
+    scrapeConfigNamespaceSelector: {}
+
   # Expose Prometheus via NodePort
   service:
     type: NodePort
@@ -54,3 +73,33 @@ alertmanager:
 prometheusOperator:
   nodeSelector:
     kubernetes.io/hostname: hl-worker-01
+
+  # Manage CRDs properly
+  manageCrds: true
+  createCustomResource: true
+
+  # Disable admission webhooks to avoid issues
+  admissionWebhooks:
+    enabled: false
+
+  # Resource limits
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+
+# Disable components we don't need that might cause CRD issues
+prometheusConfigReloader:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 50Mi
+    limits:
+      cpu: 100m
+      memory: 100Mi
+
+# Disable rules controller since we're not using complex alerting
+ruleSelector: {}
