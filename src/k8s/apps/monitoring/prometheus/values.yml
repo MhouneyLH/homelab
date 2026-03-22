@@ -70,13 +70,13 @@ scrapeConfigs:
   kubernetes-pods-slow:
     enabled: false
 
-# Add our custom scrape config for OpenTelemetry Collector
+# Add our custom scrape config - OTelC as centralized hub
 extraScrapeConfigs: |
-  # PRIMARY: Scrape OpenTelemetry Collector (centralized metrics)
+  # PRIMARY: Scrape OpenTelemetry Collector (centralized metrics hub)
   - job_name: 'opentelemetry-collector'
     static_configs:
       - targets: ['otelc-opentelemetry-collector.monitoring.svc.cluster.local:8889']
-    scrape_interval: 10s
+    scrape_interval: 30s
 
 # Set empty rule files
 ruleFiles: {}

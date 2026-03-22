@@ -25,6 +25,19 @@ resources:
 service:
   type: ClusterIP
 
+# Enable ClusterRole for kubelet access
+clusterRole:
+  create: true
+  rules:
+    - apiGroups: [""]
+      resources: ["nodes", "nodes/metrics", "services", "endpoints", "pods"]
+      verbs: ["get", "list", "watch"]
+    - apiGroups: [""]
+      resources: ["configmaps"]
+      verbs: ["get"]
+    - nonResourceURLs: ["/metrics"]
+      verbs: ["get"]
+
 # Enable metrics port for Prometheus scraping (port 8889)
 ports:
   metrics:
@@ -49,6 +62,31 @@ config:
         http:
           endpoint: ${env:MY_POD_IP}:4318
 
+    # Scrape Node Exporter metrics (centralized collection)
+    prometheus/node-exporter:
+      config:
+        scrape_configs:
+          - job_name: 'node-exporter'
+            static_configs:
+              - targets: ['prometheus-prometheus-node-exporter.monitoring.svc.cluster.local:9100']
+            scrape_interval: 30s
+
+    # Scrape kube-state-metrics
+    prometheus/kube-state-metrics:
+      config:
+        scrape_configs:
+          - job_name: 'kube-state-metrics'
+            static_configs:
+              - targets: ['prometheus-kube-state-metrics.monitoring.svc.cluster.local:8080']
+            scrape_interval: 30s
+
+    # Collect kubelet metrics directly
+    kubeletstats:
+      collection_interval: 30s
+      auth_type: "serviceAccount"
+      endpoint: "https://${env:K8S_NODE_IP}:10250"
+      insecure_skip_verify: true
+
   processors:
     # Mandatory memory limiter
     memory_limiter:
@@ -68,9 +106,9 @@ config:
     extensions: [health_check]
 
     pipelines:
-      # Minimal metrics pipeline
+      # Centralized metrics pipeline - OTelC as collection hub
       metrics:
-        receivers: [otlp]
+        receivers: [otlp, prometheus/node-exporter, prometheus/kube-state-metrics, kubeletstats]
         processors: [memory_limiter, batch]
         exporters: [prometheus]
 
