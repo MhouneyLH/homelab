@@ -12,7 +12,7 @@ spec:
   source:
     repoURL: https://github.com/MhouneyLH/homelab.git
     targetRevision: master
-    path: src/k8s/apps
+    path: src/k8s/argocd-apps
     directory:
       recurse: true
 
