@@ -56,18 +56,13 @@ ruleFiles: {}
 configmapReload:
   enabled: true
 
-# Override the entire server configuration
-server:
-  extraArgs:
-    config.file: /etc/prometheus/custom-config/prometheus.yml
-
 # Use secret mounted config instead of configmap to avoid chart merging
 # This forces a complete override rather than merge
 configMapOverrideName: ""
 
 # Completely override the default prometheus.yml configuration
 serverFiles:
-  prometheus.yml: |
+  prometheus.yml:
     global:
       scrape_interval: 30s
       evaluation_interval: 30s
@@ -123,7 +118,7 @@ serverFiles:
             target_label: __address__
 
   # Ensure completely empty rule files
-  recording_rules.yml: ""
-  alerting_rules.yml: ""
-  rules: ""
-  alerts: ""
+  recording_rules.yml: {}
+  alerting_rules.yml: {}
+  rules: {}
+  alerts: {}
