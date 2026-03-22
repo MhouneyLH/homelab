@@ -13,8 +13,6 @@ spec:
     repoURL: https://github.com/MhouneyLH/homelab.git
     targetRevision: master
     path: src/k8s/argocd-apps
-    directory:
-      recurse: true
 
   destination:
     server: https://kubernetes.default.svc
