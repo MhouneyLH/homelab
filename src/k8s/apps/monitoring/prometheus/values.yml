@@ -1,8 +1,4 @@
 ---
-# Run on worker node
-nodeSelector:
-  kubernetes.io/hostname: hl-worker-01
-
 # Expose Prometheus via NodePort
 server:
   service:
@@ -29,9 +25,14 @@ server:
   retention: "30d"
   retentionSize: "8GB"
 
-  # Node selector
+  # Node selector - run on worker node
   nodeSelector:
     kubernetes.io/hostname: hl-worker-01
+
+  # Override global prometheus settings
+  global:
+    scrape_interval: 30s
+    evaluation_interval: 30s
 
 # Enable basic components but let OTelC handle collection
 prometheus-node-exporter:
@@ -46,78 +47,42 @@ alertmanager:
 kube-state-metrics:
   enabled: true # Deploy but let OTelC scrape it
 
-# Disable all default scrape configs to prevent merging conflicts
-extraScrapeConfigs: ""
+# Disable all default scrape configs - we'll configure our own
+scrapeConfigs:
+  prometheus:
+    enabled: true # Keep self-monitoring
+  kubernetes-api-servers:
+    enabled: true # Keep API server monitoring
+  kubernetes-nodes:
+    enabled: false # Disable - OTelC handles this
+  kubernetes-nodes-cadvisor:
+    enabled: false # Disable - OTelC handles this
+  kubernetes-service-endpoints:
+    enabled: false # Disable - use annotations instead
+  kubernetes-service-endpoints-slow:
+    enabled: false
+  prometheus-pushgateway:
+    enabled: false # Disabled pushgateway
+  kubernetes-services:
+    enabled: false # Disable blackbox probing
+  kubernetes-pods:
+    enabled: true # Keep for annotated pods
+  kubernetes-pods-slow:
+    enabled: false
 
-# Completely disable default rule files
+# Add our custom scrape config for OpenTelemetry Collector
+extraScrapeConfigs: |
+  # PRIMARY: Scrape OpenTelemetry Collector (centralized metrics)
+  - job_name: 'opentelemetry-collector'
+    static_configs:
+      - targets: ['otelc-opentelemetry-collector.monitoring.svc.cluster.local:8889']
+    scrape_interval: 10s
+
+# Set empty rule files
 ruleFiles: {}
 
-# Disable default scrape configs
-configmapReload:
-  enabled: true
-
-# Use secret mounted config instead of configmap to avoid chart merging
-# This forces a complete override rather than merge
-configMapOverrideName: ""
-
-# Completely override the default prometheus.yml configuration
 serverFiles:
-  prometheus.yml: |
-    global:
-      scrape_interval: 30s
-      evaluation_interval: 30s
-
-    rule_files: []
-
-    scrape_configs:
-      # Scrape Prometheus itself
-      - job_name: "prometheus"
-        static_configs:
-          - targets: ["localhost:9090"]
-
-      # PRIMARY: Scrape OpenTelemetry Collector (centralized metrics)
-      - job_name: "opentelemetry-collector"
-        static_configs:
-          - targets: ["otelc-opentelemetry-collector.monitoring.svc.cluster.local:8889"]
-        scrape_interval: 10s
-
-      # Basic Kubernetes API server (direct scrape)
-      - job_name: "kubernetes-apiservers"
-        kubernetes_sd_configs:
-          - role: endpoints
-        scheme: https
-        tls_config:
-          ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-        bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
-        relabel_configs:
-          - source_labels:
-              [
-                __meta_kubernetes_namespace,
-                __meta_kubernetes_service_name,
-                __meta_kubernetes_endpoint_port_name,
-              ]
-            action: keep
-            regex: default;kubernetes;https
-
-      # Optional: Scrape pods with prometheus annotations (for apps that expose metrics directly)
-      - job_name: "kubernetes-pods"
-        kubernetes_sd_configs:
-          - role: pod
-        relabel_configs:
-          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
-            action: keep
-            regex: true
-          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
-            action: replace
-            target_label: __metrics_path__
-            regex: (.+)
-          - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
-            action: replace
-            regex: ([^:]+)(?::\d+)?;(\d+)
-            replacement: $1:$2
-            target_label: __address__
-
-  # Ensure completely empty rule files
+  # Empty rule files
   recording_rules.yml: {}
   alerting_rules.yml: {}
   rules: {}
