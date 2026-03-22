@@ -15,6 +15,12 @@ spec:
       targetRevision: "82.13.1"
       helm:
         releaseName: prometheus
+        # Force CRD installation
+        parameters:
+          - name: prometheusOperator.manageCrds
+            value: "true"
+          - name: crds.enabled
+            value: "true"
         valueFiles:
           - $values/src/k8s/apps/monitoring/prometheus/values.yml
 
@@ -32,3 +38,5 @@ spec:
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
+      - Replace=true # Force replace resources
+      - ServerSideApply=true # Use server-side apply for CRDs
