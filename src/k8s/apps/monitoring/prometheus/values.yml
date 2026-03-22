@@ -62,7 +62,7 @@ configMapOverrideName: ""
 
 # Completely override the default prometheus.yml configuration
 serverFiles:
-  prometheus.yml:
+  prometheus.yml: |
     global:
       scrape_interval: 30s
       evaluation_interval: 30s
