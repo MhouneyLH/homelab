@@ -11,16 +11,10 @@ spec:
 
   sources:
     - repoURL: https://prometheus-community.github.io/helm-charts
-      chart: kube-prometheus-stack
-      targetRevision: "82.13.1"
+      chart: prometheus
+      targetRevision: "28.14.0"
       helm:
         releaseName: prometheus
-        # Force CRD installation
-        parameters:
-          - name: prometheusOperator.manageCrds
-            value: "true"
-          - name: crds.enabled
-            value: "true"
         valueFiles:
           - $values/src/k8s/apps/monitoring/prometheus/values.yml
 
@@ -38,5 +32,3 @@ spec:
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
-      - Replace=true # Force replace resources
-      - ServerSideApply=true # Use server-side apply for CRDs

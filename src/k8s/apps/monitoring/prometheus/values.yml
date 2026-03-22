@@ -1,105 +1,102 @@
 ---
-# Disable Grafana since we already have it running
-grafana:
-  enabled: false
+# Run on worker node
+nodeSelector:
+  kubernetes.io/hostname: hl-worker-01
 
-# Ensure CRD installation is handled properly
-crds:
-  enabled: true
-
-# Prometheus configuration
-prometheus:
-  prometheusSpec:
-    # Run on worker node
-    nodeSelector:
-      kubernetes.io/hostname: hl-worker-01
-
-    # Persistence for metrics data
-    storageSpec:
-      volumeClaimTemplate:
-        spec:
-          storageClassName: local-path
-          accessModes: ["ReadWriteOnce"]
-          resources:
-            requests:
-              storage: 10Gi
-
-    # Resource limits for homelab
-    resources:
-      requests:
-        cpu: 100m
-        memory: 512Mi
-      limits:
-        cpu: 2000m
-        memory: 2Gi
-
-    # Retention period
-    retention: "30d"
-    retentionSize: "9GB"
-
-    # Disable features that require problematic CRDs
-    enableRemoteWriteReceiver: false
-
-    # Simple rule selector (avoid complex CRD dependencies)
-    ruleSelector: {}
-    ruleNamespaceSelector: {}
-
-    # Simple service monitor selector
-    serviceMonitorSelector: {}
-    serviceMonitorNamespaceSelector: {}
-
-    # Disable scrape configs CRD (this is causing one of the errors)
-    scrapeConfigSelector: {}
-    scrapeConfigNamespaceSelector: {}
-
-  # Expose Prometheus via NodePort
+# Expose Prometheus via NodePort
+server:
   service:
     type: NodePort
-    nodePort: 30090  # Access Prometheus at :30090
+    nodePort: 30090
 
-# Node Exporter configuration
-nodeExporter:
-  enabled: true
+  # Persistence
+  persistentVolume:
+    enabled: true
+    storageClass: local-path
+    size: 10Gi
 
-# Kube State Metrics
-kubeStateMetrics:
-  enabled: true
+  # Resources
+  resources:
+    requests:
+      cpu: 100m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 2Gi
 
-# Alertmanager
-alertmanager:
-  enabled: false  # Disable for homelab simplicity
+  # Retention; delete the oldest data when hitting
+  # either the time or size limit; whatever comes first
+  retention: "30d"
+  retentionSize: "8GB"
 
-# Prometheus Operator
-prometheusOperator:
+  # Node selector
   nodeSelector:
     kubernetes.io/hostname: hl-worker-01
 
-  # Manage CRDs properly
-  manageCrds: true
-  createCustomResource: true
+# Enable basic components but let OTelC handle collection
+prometheus-node-exporter:
+  enabled: true # Still deploy node-exporter, but OTelC will scrape it
 
-  # Disable admission webhooks to avoid issues
-  admissionWebhooks:
-    enabled: false
+pushgateway:
+  enabled: false
 
-  # Resource limits
-  resources:
-    requests:
-      cpu: 50m
-      memory: 128Mi
-    limits:
-      cpu: 200m
-      memory: 256Mi
+alertmanager:
+  enabled: false
 
-# Disable components we don't need that might cause CRD issues
-prometheusConfigReloader:
-  resources:
-    requests:
-      cpu: 50m
-      memory: 50Mi
-    limits:
-      cpu: 100m
-      memory: 100Mi
+kube-state-metrics:
+  enabled: true # Deploy but let OTelC scrape it
 
-# Disable rules controller since we're not using complex alerting
-ruleSelector: {}
+# Simplified scrape configuration - OTelC as central hub
+serverFiles:
+  prometheus.yml:
+    global:
+      scrape_interval: 30s
+      evaluation_interval: 30s
+
+    scrape_configs:
+      # Scrape Prometheus itself
+      - job_name: "prometheus"
+        static_configs:
+          - targets: ["localhost:9090"]
+
+      # PRIMARY: Scrape OpenTelemetry Collector (centralized metrics)
+      - job_name: "opentelemetry-collector"
+        static_configs:
+          - targets: ["otelc-opentelemetry-collector.monitoring.svc.cluster.local:8889"]
+        scrape_interval: 10s
+
+      # Basic Kubernetes API server (direct scrape)
+      - job_name: "kubernetes-apiservers"
+        kubernetes_sd_configs:
+          - role: endpoints
+        scheme: https
+        tls_config:
+          ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+        bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+        relabel_configs:
+          - source_labels:
+              [
+                __meta_kubernetes_namespace,
+                __meta_kubernetes_service_name,
+                __meta_kubernetes_endpoint_port_name,
+              ]
+            action: keep
+            regex: default;kubernetes;https
+
+      # Optional: Scrape pods with prometheus annotations (for apps that expose metrics directly)
+      - job_name: "kubernetes-pods"
+        kubernetes_sd_configs:
+          - role: pod
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+            action: keep
+            regex: true
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+            action: replace
+            target_label: __metrics_path__
+            regex: (.+)
+          - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+            action: replace
+            regex: ([^:]+)(?::\d+)?;(\d+)
+            replacement: $1:$2
+            target_label: __address__
