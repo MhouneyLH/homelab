@@ -3,6 +3,11 @@
 mode: deployment
 replicaCount: 1
 
+# Required: Set the collector image
+image:
+  repository: otel/opentelemetry-collector-contrib
+  tag: ""  # Use chart's default version
+
 # Run on worker node
 nodeSelector:
   kubernetes.io/hostname: hl-worker-01
@@ -19,87 +24,55 @@ resources:
 # Service configuration
 service:
   type: ClusterIP
-  ports:
-    - name: otlp-grpc
-      port: 4317
-      targetPort: 4317
-      protocol: TCP
-    - name: otlp-http
-      port: 4318
-      targetPort: 4318
-      protocol: TCP
-    - name: metrics
-      port: 8889
-      targetPort: 8889
-      protocol: TCP
 
-# OpenTelemetry Collector configuration
+# Enable metrics port for Prometheus scraping (port 8889)
+ports:
+  metrics:
+    enabled: true
+    containerPort: 8889
+    servicePort: 8889
+    protocol: TCP
+
+# Minimal OpenTelemetry Collector configuration
 config:
+  extensions:
+    # Mandatory health check extension
+    health_check:
+      endpoint: ${env:MY_POD_IP}:13133
+
   receivers:
-    # Receive OTLP traces and metrics
+    # Basic OTLP receiver for future use
     otlp:
       protocols:
         grpc:
-          endpoint: 0.0.0.0:4317
+          endpoint: ${env:MY_POD_IP}:4317
         http:
-          endpoint: 0.0.0.0:4318
-
-    # Scrape Kubernetes kubelet metrics
-    kubeletstats:
-      collection_interval: 30s
-      auth_type: "serviceAccount"
-      endpoint: "https://${env:K8S_NODE_IP}:10250"
-      insecure_skip_verify: true
-
-    # Scrape Node Exporter metrics (centralized collection)
-    prometheus/node-exporter:
-      config:
-        scrape_configs:
-          - job_name: 'node-exporter'
-            static_configs:
-              - targets: ['prometheus-prometheus-node-exporter.monitoring.svc.cluster.local:9100']
-            scrape_interval: 30s
-
-          - job_name: 'kube-state-metrics'
-            static_configs:
-              - targets: ['prometheus-kube-state-metrics.monitoring.svc.cluster.local:8080']
-            scrape_interval: 30s
+          endpoint: ${env:MY_POD_IP}:4318
 
   processors:
-    # Simple batch processing
-    batch:
-      timeout: 5s
-      send_batch_size: 512
+    # Mandatory memory limiter
+    memory_limiter:
+      check_interval: 5s
+      limit_percentage: 80
+      spike_limit_percentage: 25
+
+    # Basic batch processing
+    batch: {}
 
   exporters:
-    # Export metrics in Prometheus format
+    # Export metrics for Prometheus scraping on port 8889
     prometheus:
-      endpoint: "0.0.0.0:8889"
-      namespace: "otelc"
-
-    # Log traces and metrics for debugging
-    logging:
-      loglevel: info
+      endpoint: "${env:MY_POD_IP}:8889"
 
   service:
+    extensions: [health_check]
+
     pipelines:
-      # Metrics pipeline - OTelC as central collection hub
+      # Minimal metrics pipeline
       metrics:
-        receivers: [otlp, kubeletstats, prometheus/node-exporter]
-        processors: [batch]
-        exporters: [prometheus, logging]
-
-      # Traces pipeline
-      traces:
         receivers: [otlp]
-        processors: [batch]
-        exporters: [logging]
-
-      # Logs pipeline
-      logs:
-        receivers: [otlp]
-        processors: [batch]
-        exporters: [logging]
+        processors: [memory_limiter, batch]
+        exporters: [prometheus]
 
 # No need for ServiceMonitor - Prometheus scrapes directly
 serviceMonitor:
