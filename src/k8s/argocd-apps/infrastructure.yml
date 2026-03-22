@@ -2,21 +2,21 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: local-path-provisioner
+  name: infrastructure
   namespace: argocd
   annotations:
-    argocd.argoproj.io/sync-wave: "0" # Install this first, before apps that need storage
+    argocd.argoproj.io/sync-wave: "-1" # Install before everything else
 spec:
   project: default
 
   source:
-    repoURL: https://github.com/rancher/local-path-provisioner.git
-    targetRevision: v0.0.35
-    path: deploy/chart/local-path-provisioner
+    repoURL: https://github.com/MhouneyLH/homelab.git
+    targetRevision: master
+    path: src/k8s/infrastructure
 
   destination:
     server: https://kubernetes.default.svc
-    namespace: local-path-storage
+    namespace: default # Namespaces are cluster-scoped, but we need a target
 
   syncPolicy:
     automated:
