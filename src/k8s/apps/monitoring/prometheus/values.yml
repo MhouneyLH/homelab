@@ -46,22 +46,33 @@ alertmanager:
 kube-state-metrics:
   enabled: true # Deploy but let OTelC scrape it
 
-# Disable default scrape configs to prevent merging conflicts
+# Disable all default scrape configs to prevent merging conflicts
+extraScrapeConfigs: ""
+
+# Completely disable default rule files
+ruleFiles: {}
+
+# Disable default scrape configs
 configmapReload:
   enabled: true
 
+# Override the entire server configuration
+server:
+  extraArgs:
+    config.file: /etc/prometheus/custom-config/prometheus.yml
+
+# Use secret mounted config instead of configmap to avoid chart merging
+# This forces a complete override rather than merge
+configMapOverrideName: ""
+
 # Completely override the default prometheus.yml configuration
 serverFiles:
-  prometheus.yml:
+  prometheus.yml: |
     global:
       scrape_interval: 30s
       evaluation_interval: 30s
 
-    rule_files:
-      - "/etc/config/recording_rules.yml"
-      - "/etc/config/alerting_rules.yml"
-      - "/etc/config/rules"
-      - "/etc/config/alerts"
+    rule_files: []
 
     scrape_configs:
       # Scrape Prometheus itself
@@ -111,8 +122,8 @@ serverFiles:
             replacement: $1:$2
             target_label: __address__
 
-  # Ensure empty rule files exist to prevent chart defaults
-  recording_rules.yml: {}
-  alerting_rules.yml: {}
-  rules: {}
-  alerts: {}
+  # Ensure completely empty rule files
+  recording_rules.yml: ""
+  alerting_rules.yml: ""
+  rules: ""
+  alerts: ""
