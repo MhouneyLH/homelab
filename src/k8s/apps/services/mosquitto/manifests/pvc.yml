@@ -5,6 +5,7 @@ metadata:
   name: mosquitto-data
   namespace: services
 spec:
+  storageClassName: local-path
   accessModes:
     - ReadWriteOnce
   resources:
