@@ -7,7 +7,7 @@ metadata:
 spec:
   project: default
   sources:
-    - repoURL: oci://codeberg.org/wrenix/helm-charts
+    - repoURL: oci://codeberg.org/wrenix/helm-charts/grampsweb
       chart: grampsweb
       targetRevision: "0.2.41"
       helm:
