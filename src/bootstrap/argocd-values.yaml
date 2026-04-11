@@ -29,3 +29,5 @@ repoServer:
 configs:
   params:
     server.insecure: true
+  cm:
+    timeout.reconciliation: 15s
