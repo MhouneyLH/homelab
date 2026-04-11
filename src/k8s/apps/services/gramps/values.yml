@@ -21,7 +21,7 @@ persistence:
 
 # Service configuration
 service:
-  type: ClusterIP
+  type: NodePort
   port: 5000
 
 # Ingress configuration - for external access
