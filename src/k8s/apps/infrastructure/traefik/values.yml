@@ -1,0 +1,56 @@
+---
+# Traefik Configuration
+
+# Node selector - run on control plane
+nodeSelector:
+  node-role.kubernetes.io/control-plane: hl-control-plane
+
+tolerations:
+  - key: node-role.kubernetes.io/control-plane
+    effect: NoSchedule
+
+# Traefik service configuration
+service:
+  type: NodePort
+  ports:
+    web:
+      port: 80
+      nodePort: 31080
+    websecure:
+      port: 443
+      nodePort: 31443
+
+# Traefik entrypoints (listeners)
+ports:
+  web:
+    expose: true
+    exposedPort: 80
+    containerPort: 8000
+  websecure:
+    expose: true
+    exposedPort: 443
+    containerPort: 8443
+
+# API/Dashboard configuration
+api:
+  dashboard: true
+  insecure: true
+
+# Enable Kubernetes provider for ingress
+providers:
+  kubernetesIngress:
+    enabled: true
+    publishedService:
+      enabled: true
+      namespace: traefik
+
+# Logging
+logs:
+  general:
+    level: INFO
+
+# Metrics (optional)
+metrics:
+  prometheus:
+    addEntryPointsLabels: true
+    addServicesLabels: true
