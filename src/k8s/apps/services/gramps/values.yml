@@ -1,0 +1,80 @@
+---
+# Gramps Web Configuration
+
+# Replicas and node selector
+replicaCount: 1
+nodeSelector:
+  kubernetes.io/hostname: hl-worker-01
+
+# Image configuration
+image:
+  registry: ghcr.io
+  repository: gramps-project/grampsweb
+  tag: "" # Will use chart default
+
+# Storage - Volumes & Persistence
+persistence:
+  enabled: true
+  accessMode: ReadWriteOnce
+  size: 10Gi # Adjust based on your family tree size
+
+# Service configuration
+service:
+  type: ClusterIP
+  port: 5000
+
+# Ingress configuration - for external access
+ingress:
+  enabled: true
+  className: "" # Update to your ingress class (e.g., "nginx")
+  annotations: {}
+  hosts:
+    - host: gramps.homelab.local # Update to your domain
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+  # Example TLS configuration (uncomment if using HTTPS):
+  # tls:
+  #   - secretName: gramps-tls
+  #     hosts:
+  #       - gramps.homelab.local
+
+# Gramps-specific configuration
+gramps:
+  # Base URL for generating links in emails (password reset, etc.)
+  baseURL: https://adjust.gramps.homelab.local
+
+  # Tree configuration - single tree is default
+  # For multi-tree support, set to: "*"
+  tree: "Family Tree"
+
+  # Security settings
+  registrationDisabled: true # Disable public registration
+  disableTelemetry: true # No telemetry
+
+  # Media file organization
+  mediaPrefixTree: false # Set to true if using multiple trees
+
+  # Email configuration (optional - for password reset emails)
+  # Uncomment and configure if you have an SMTP server:
+  # mail:
+  #   host: smtp.example.com
+  #   port: 587
+  #   username: your-email@example.com
+  #   password: your-app-password
+  #   from: noreply@homelab.local
+  #   useTLS: true
+
+# Resource requests and limits (adjust as needed)
+resources: {}
+#  limits:
+#    cpu: 500m
+#    memory: 512Mi
+#  requests:
+#    cpu: 100m
+#    memory: 128Mi
+
+# Security context (optional, adjust as needed)
+podSecurityContext: {}
+securityContext: {}

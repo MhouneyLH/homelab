@@ -1,0 +1,31 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: gramps
+  namespace: argocd
+spec:
+  project: default
+  sources:
+    - repoURL: oci://codeberg.org/wrenix/helm-charts
+      chart: grampsweb
+      targetRevision: "0.2.41"
+      helm:
+        releaseName: grampsweb
+        valueFiles:
+          - $values/src/k8s/apps/services/gramps/values.yml
+
+    - repoURL: https://github.com/MhouneyLH/homelab.git
+      targetRevision: master
+      ref: values
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: services
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
