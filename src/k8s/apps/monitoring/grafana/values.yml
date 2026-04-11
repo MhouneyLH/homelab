@@ -11,6 +11,8 @@ revisionHistoryLimit: 2
 
 service:
   type: NodePort
+  port: 3000
+  nodePort: 30070
 
 nodeSelector:
   kubernetes.io/hostname: hl-worker-01
@@ -20,30 +22,30 @@ datasources:
   datasources.yaml:
     apiVersion: 1
     datasources:
-    - name: Prometheus
-      type: prometheus
-      url: http://prometheus-server.monitoring.svc.cluster.local  # Simple prometheus service name
-      access: proxy
-      isDefault: true
+      - name: Prometheus
+        type: prometheus
+        url: http://prometheus-server.monitoring.svc.cluster.local # Simple prometheus service name
+        access: proxy
+        isDefault: true
 
-    - name: OpenTelemetry
-      type: prometheus
-      url: http://otelc-opentelemetry-collector.monitoring.svc.cluster.local:8889
-      access: proxy
+      - name: OpenTelemetry
+        type: prometheus
+        url: http://otelc-opentelemetry-collector.monitoring.svc.cluster.local:8889
+        access: proxy
 
 # Import some useful dashboards
 dashboardProviders:
   dashboardproviders.yaml:
     apiVersion: 1
     providers:
-    - name: 'default'
-      orgId: 1
-      folder: ''
-      type: file
-      disableDeletion: false
-      editable: true
-      options:
-        path: /var/lib/grafana/dashboards/default
+      - name: "default"
+        orgId: 1
+        folder: ""
+        type: file
+        disableDeletion: false
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards/default
 
 dashboards:
   default:

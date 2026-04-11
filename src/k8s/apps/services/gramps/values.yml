@@ -23,6 +23,7 @@ persistence:
 service:
   type: NodePort
   port: 5000
+  nodePort: 30050
 
 # Ingress configuration - for external access
 # ingress:
