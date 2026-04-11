@@ -21,26 +21,26 @@ persistence:
 
 # Service configuration
 service:
-  type: NodePort
+  type: ClusterIP  # Changed from NodePort (ingress will handle external access)
   port: 5000
-  nodePort: 30050
 
-# Ingress configuration - for external access
-# ingress:
-#   enabled: true
-#   className: "" # Update to your ingress class (e.g., "nginx")
-#   annotations: {}
-#   hosts:
-#     - host: gramps.homelab.local # Update to your domain
-#       paths:
-#         - path: /
-#           pathType: Prefix
-#   tls: []
-#   # Example TLS configuration (uncomment if using HTTPS):
-#   # tls:
-#   #   - secretName: gramps-tls
-#   #     hosts:
-#   #       - gramps.homelab.local
+# Ingress configuration - for external access via Traefik
+ingress:
+  enabled: true
+  className: traefik
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+  hosts:
+    - host: gramps.homelab.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+  # Optional TLS configuration:
+  # tls:
+  #   - secretName: gramps-tls
+  #     hosts:
+  #       - gramps.homelab.local
 
 # Gramps-specific configuration
 gramps:
@@ -80,3 +80,45 @@ resources: {}
 # Security context (optional, adjust as needed)
 podSecurityContext: {}
 securityContext: {}
+
+# Init containers for automatic data import on first start
+# SETUP:
+# 1. Export your data:
+#    kubectl cp grampsweb-pod:/root/.local/share/gramps ~/gramps-backup
+#    Or via API: curl http://localhost:5000/api/export > family-tree.json
+#
+# 2. Create ConfigMap:
+#    kubectl create configmap gramps-import-data --from-file=family-tree.gramps -n services
+#
+# 3. Uncomment initContainers below and values.volumes/volumeMounts above
+#
+initContainers: []
+# - name: import-data
+#   image: ghcr.io/gramps-project/grampsweb:latest
+#   command:
+#     - /bin/sh
+#     - -c
+#     - |
+#       cd /root/.local/share/gramps
+#       # Import GRAMPS database if not already present
+#       if [ ! -d "Family Tree" ] && [ -f /import-data/family-tree.gramps ]; then
+#         python -m grampsweb.import /import-data/family-tree.gramps
+#       fi
+#   volumeMounts:
+#     - name: import-data
+#       mountPath: /import-data
+#       readOnly: true
+#     - name: grampsweb
+#       mountPath: /root/.local/share/gramps
+
+# Volumes for ConfigMap-based imports
+volumes: []
+# - name: import-data
+#   configMap:
+#     name: gramps-import-data
+#     defaultMode: 0644
+
+volumeMounts: []
+# - name: import-data
+#   mountPath: /import-data
+#   readOnly: true

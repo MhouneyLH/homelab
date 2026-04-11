@@ -11,25 +11,27 @@ tolerations:
 
 # Traefik service configuration
 service:
-  type: NodePort
-  ports:
-    web:
-      port: 80
-      nodePort: 31080
-    websecure:
-      port: 443
-      nodePort: 31443
+  enabled: true
+  single: true
+  spec:
+    type: NodePort
 
 # Traefik entrypoints (listeners)
 ports:
   web:
-    expose: true
-    exposedPort: 80
-    containerPort: 8000
+    port: 15000
+    expose:
+      default: true
+    exposedPort: 15000
+    protocol: TCP
+    nodePort: 30015
   websecure:
-    expose: true
-    exposedPort: 443
-    containerPort: 8443
+    port: 15001
+    expose:
+      default: true
+    exposedPort: 15001
+    protocol: TCP
+    nodePort: 31501
 
 # API/Dashboard configuration
 api:
