@@ -15,6 +15,7 @@ image:
 # Storage - Volumes & Persistence
 persistence:
   enabled: true
+  storageClass: local-path
   accessMode: ReadWriteOnce
   size: 10Gi # Adjust based on your family tree size
 
@@ -24,21 +25,21 @@ service:
   port: 5000
 
 # Ingress configuration - for external access
-ingress:
-  enabled: true
-  className: "" # Update to your ingress class (e.g., "nginx")
-  annotations: {}
-  hosts:
-    - host: gramps.homelab.local # Update to your domain
-      paths:
-        - path: /
-          pathType: Prefix
-  tls: []
-  # Example TLS configuration (uncomment if using HTTPS):
-  # tls:
-  #   - secretName: gramps-tls
-  #     hosts:
-  #       - gramps.homelab.local
+# ingress:
+#   enabled: true
+#   className: "" # Update to your ingress class (e.g., "nginx")
+#   annotations: {}
+#   hosts:
+#     - host: gramps.homelab.local # Update to your domain
+#       paths:
+#         - path: /
+#           pathType: Prefix
+#   tls: []
+#   # Example TLS configuration (uncomment if using HTTPS):
+#   # tls:
+#   #   - secretName: gramps-tls
+#   #     hosts:
+#   #       - gramps.homelab.local
 
 # Gramps-specific configuration
 gramps:
