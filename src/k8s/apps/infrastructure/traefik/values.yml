@@ -3,7 +3,7 @@
 
 # Node selector - run on control plane
 nodeSelector:
-  node-role.kubernetes.io/control-plane: hl-control-plane
+  node-role.kubernetes.io/control-plane: ""
 
 tolerations:
   - key: node-role.kubernetes.io/control-plane
