@@ -64,8 +64,13 @@ Grafana is my observability UI of choice. I use it to visualize all the differen
 
 Currently, my homelab consists of 2 nodes with the following specifications:
 
-- Node 1 (Control Plane; `hl-control-plane`): TBD
-- Node 2 (Worker; `hl-worker-01`): TBD
+| Role          | Node IP           | Hostname          | Product Name               | CPU                                                   | Memory                   | Primary Disk                        |
+| ------------- | ----------------- | ----------------- | -------------------------- | ----------------------------------------------------- | ------------------------ | ----------------------------------- |
+| Control Plane | `pssst; see .env` | `hl-controlplane` | Dell OptiPlex 3050         | Intel Core i3-7100T (2 cores / 4 threads) at 3.4 GHz  | 4 GiB (1 x 4 GiB DIMM)   | `sda` SATA 128 GB (SK hynix SC311)  |
+| Worker        | `pssst; see .env` | `hl-worker-01`    | HP EliteDesk 800 G2 DM 35W | Intel Core i7-6700T (4 cores / 8 threads) at 2.80 GHz | 16 GiB (2 x 8 GiB DIMMs) | `nvme0n1` NVMe 512 GB (NX-512 2280) |
+
+> [!NOTE]
+> **When trying to get overview again:** Use the [get_node_information.sh](./scripts/get_node_information.sh) script to get an instant overview of the hardware information of the nodes which ip-addresses can be specified in the [.env](./.env) file. If you want to run commands manually, also take a look at the [Working with talosctl](#working-with-talosctl) section.
 
 ### Software
 
@@ -80,13 +85,16 @@ The Software stack consists of the following components:
 - monitoring & observability:
   - Prometheus for metrics collection
   - Grafana for visualization of metrics and logs
-  - OpenTelemtry Collector for collecting and forwarding metrics and logs to the right places
+  - OpenTelemetry Collector for collecting and forwarding metrics and logs to the right places
 
 ## Prerequisites
 
 - Terraform installed e.g. on the local machine / jump host
+- [kubectl](https://kubernetes.io/docs/setup/) installed on the local machine / jump host for accessing the cluster
 - Prepared Talos Linux ISO image (see [here](https://docs.siderolabs.com/talos/v1.9/platform-specific-installations/bare-metal-platforms/iso) for more information)
 - Ventoy installed on a USB stick (see [here](https://www.ventoy.net/en/download.html) for more information)
+- (_optional, but recommended_) [talosctl](https://docs.siderolabs.com/talos/v1.8/getting-started/talosctl) installed on the local machine / jump host for easier management of the cluster
+- (_optional, but recommended_) tools for managing the cluster like e.g. [k9s](https://k9scli.io/) or [Headlamp](https://headlamp.dev/docs/latest/installation/) installed on the local machine / jump host for easier management of the cluster
 
 ## Structure
 
@@ -103,6 +111,13 @@ In the `src` directory, there are the distinction of different types of configur
   - [infrastructure](./src/k8s/infrastructure): these are the manifests for the infrastructure components of the cluster, e.g. CNI, namesspaces, etc. (PROBABLY THIS SHOULD BE HANDLED DIFFERENTLY; I CURRENTLY USE THIS FOR EVERYTHING I DONT KONW WHERE TO PUT)
 
 ### Bootstrapping
+
+Before running Terraform, keep node IPs in local ignored tfvars files:
+
+```bash
+cp src/talos/secrets.auto.tfvars.example src/talos/secrets.auto.tfvars
+cp src/bootstrap/secrets.auto.tfvars.example src/bootstrap/secrets.auto.tfvars
+```
 
 The bootstrapping of the cluster is handled via Terraform using the Talos Provider. Use the following commmands to bootstrap the cluster:
 
@@ -165,8 +180,6 @@ TBD
 ### Working with talosctl
 
 ```bash
-talosctl get disks -n the-ip-of-the-node --insecure # list disks of the node - nice for finding out which disk is the one you want to install Talos on
-
 terraform output -raw kubeconfig > ~/.kube/config # export kubeconfig from terraform output
 chmod 600 ~/.kube/config # set permissions for kubeconfig
 kubectl get nodes # verify cluster access
@@ -176,15 +189,23 @@ talosctl dashboard -n the-ip-of-the-node # when endpoint for talosctl is defined
 
 talosctl config info
 
+# getting overview, which nodes exist in the cluster
+talosctl get members
+
 # getting hardware info of a node
 talosctl get systemInformation -n the-ip-of-the-node
 
+# CPU info
+talosctl get processors --nodes the-ip-of-the-nodes-comma-separated
+# RAM / memory modules
+talosctl get memorymodules --nodes the-ip-of-the-nodes-comma-separated
+# list disks of the node - nice for finding out which disk is the one you want to install Talos on
+talosctl get disks -n the-ip-of-the-node --insecure
 # getting MAC address of a node
 talosctl get links -n the-ip-of-the-node
 
 # editing the machine configuration manually (sadly not possible to adjust the hostname on this way; for this you have to connect directly with the node and edit network config there)
 talosctl -n the-ip-of-the-node edit mc --mode=staged
-talosctl get members
 ```
 
 ## Learnings
