@@ -1,8 +1,8 @@
 locals {
-  node_ip            = "10.0.0.220"
-  cluster_endpoint   = "https://10.0.0.220:6443"
-  talos_install_disk = "/dev/sda"
-  hostname           = "hl-controlplane"
+  node_ip            = var.controlplane_node_ip
+  cluster_endpoint   = var.cluster_endpoint != null ? var.cluster_endpoint : "https://${var.controlplane_node_ip}:6443"
+  talos_install_disk = var.controlplane_install_disk
+  hostname           = var.controlplane_hostname
 }
 
 resource "talos_machine_secrets" "controlplane" {

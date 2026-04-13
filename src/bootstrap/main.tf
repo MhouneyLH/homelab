@@ -52,5 +52,5 @@ output "argocd_server_admin_password" {
 # deployed it intentionally on control plane using the node selector in the argocd-values.yaml
 output "argocd_ui_url" {
   description = "URL to access ArgoCD UI"
-  value       = "http://10.0.0.220:30080"
+  value       = "http://${var.argocd_ui_host}:30080"
 }
