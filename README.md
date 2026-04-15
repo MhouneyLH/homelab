@@ -145,14 +145,7 @@ terraform output -raw kubeconfig > ~/.kube/config
 chmod 600 ~/.kube/config
 ```
 
-When not having access to the terraform state file, you can also use the [talosctl](https://docs.siderolabs.com/talos/v1.6/learn-more/talosctl) cli tool like this:
-
-```bash
-talosctl kubeconfig ~/.kube/config -n the-node-ip-address --insecure
-chmod 600 ~/.kube/config
-```
-
-or when secure is possible:
+You can also use the [talosctl](https://docs.siderolabs.com/talos/v1.6/learn-more/talosctl) cli tool like this:
 
 ```bash
 talosctl kubeconfig ~/.kube/config -n the-node-ip-address
