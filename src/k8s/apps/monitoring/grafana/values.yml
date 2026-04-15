@@ -43,26 +43,21 @@ dashboardProviders:
         folder: ""
         type: file
         disableDeletion: false
-        editable: true
+        editable: false
         options:
           path: /var/lib/grafana/dashboards/default
 
 dashboards:
   default:
-    # Kubernetes cluster overview
+    argo-cd:
+      url: https://raw.githubusercontent.com/MhouneyLH/homelab/master/src/k8s/apps/monitoring/grafana/dashboards/argo_cd_dashboard.json
     kubernetes-cluster:
-      gnetId: 7249
-      revision: 1
-      datasource: Prometheus
-
-    # Node exporter dashboard
+      url: https://raw.githubusercontent.com/MhouneyLH/homelab/master/src/k8s/apps/monitoring/grafana/dashboards/k8s_cluster_dashboard.json
+    mosquitto:
+      url: https://raw.githubusercontent.com/MhouneyLH/homelab/master/src/k8s/apps/monitoring/grafana/dashboards/mosquitto_dashboard.json
     node-exporter:
-      gnetId: 1860
-      revision: 37
-      datasource: Prometheus
-
-    # Pod monitoring
-    kubernetes-pods:
-      gnetId: 6417
-      revision: 1
-      datasource: Prometheus
+      url: https://raw.githubusercontent.com/MhouneyLH/homelab/master/src/k8s/apps/monitoring/grafana/dashboards/node_exporter_dashboard.json
+    prometheus:
+      url: https://raw.githubusercontent.com/MhouneyLH/homelab/master/src/k8s/apps/monitoring/grafana/dashboards/prometheus_dashboard.json
+    traefik:
+      url: https://raw.githubusercontent.com/MhouneyLH/homelab/master/src/k8s/apps/monitoring/grafana/dashboards/traefik_dashboard.json
