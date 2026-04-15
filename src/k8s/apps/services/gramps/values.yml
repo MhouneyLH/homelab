@@ -31,7 +31,7 @@ ingress:
   annotations:
     traefik.ingress.kubernetes.io/router.entrypoints: web
   hosts:
-    - host: gramps.homelab.local
+    - host: gramps.lucas-homelab-festung-der-finsternis.duckdns.org
       paths:
         - path: /
           pathType: Prefix
@@ -45,7 +45,7 @@ ingress:
 # Gramps-specific configuration
 gramps:
   # Base URL for generating links in emails (password reset, etc.)
-  baseURL: https://adjust.gramps.homelab.local
+  baseURL: http://gramps.lucas-homelab-festung-der-finsternis.duckdns.org
 
   # Tree configuration - single tree is default
   # For multi-tree support, set to: "*"
