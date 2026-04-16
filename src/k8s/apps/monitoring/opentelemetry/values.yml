@@ -95,6 +95,31 @@ config:
               - targets: ["mosquitto-metrics.services.svc.cluster.local:9234"]
             scrape_interval: 30s
 
+    # Scrape Argo CD metrics services discovered in argocd namespace
+    prometheus/argocd:
+      config:
+        scrape_configs:
+          - job_name: "argocd"
+            kubernetes_sd_configs:
+              - role: endpoints
+            relabel_configs:
+              - source_labels: [__meta_kubernetes_namespace]
+                action: keep
+                regex: argocd
+              - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape]
+                action: keep
+                regex: "true"
+              - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_path]
+                action: replace
+                target_label: __metrics_path__
+                regex: (.+)
+              - source_labels: [__address__, __meta_kubernetes_service_annotation_prometheus_io_port]
+                action: replace
+                regex: '([^:]+)(?::\d+)?;(\d+)'
+                replacement: '$1:$2'
+                target_label: __address__
+            scrape_interval: 30s
+
     # Collect kubelet metrics directly
     kubeletstats:
       collection_interval: 30s
@@ -129,6 +154,7 @@ config:
             prometheus/node-exporter,
             prometheus/kube-state-metrics,
             prometheus/mosquitto,
+            prometheus/argocd,
             kubeletstats,
           ]
         processors: [memory_limiter, batch]
