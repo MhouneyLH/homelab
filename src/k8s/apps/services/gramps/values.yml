@@ -40,7 +40,7 @@ ingress:
 gramps:
   # Base URL for generating links in emails (password reset, etc.)
   baseURL: https://gramps.lucas-homelab-festung-der-finsternis.duckdns.org
-  tree: "Hünniger Familienbaum"
+  tree: "Hünniger Stammbaum"
   registrationDisabled: false
   disableTelemetry: true
   mediaPrefixTree: false
