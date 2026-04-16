@@ -1,0 +1,63 @@
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: gramps-backup
+  namespace: services
+spec:
+  schedule: "0 2 * * *"
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 3
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: backup
+              image: alpine:3.20
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -eu
+                  apk add --no-cache tar gzip findutils coreutils >/dev/null
+
+                  TS=$(date +%Y%m%d-%H%M%S)
+                  TARGET_DIR="/backup/archives"
+                  TARGET_FILE="$TARGET_DIR/gramps-$TS.tar.gz"
+
+                  mkdir -p "$TARGET_DIR"
+
+                  # Archive only existing paths so backups keep running even if one path is missing.
+                  PATHS=""
+                  for p in app/users app/indexdir app/thumbnail_cache app/secret app/media root/.gramps/grampsdb; do
+                    if [ -e "/source/$p" ]; then
+                      PATHS="$PATHS $p"
+                    fi
+                  done
+
+                  if [ -z "$PATHS" ]; then
+                    echo "No source data found under /source; aborting backup"
+                    exit 1
+                  fi
+
+                  tar -czf "$TARGET_FILE" -C /source $PATHS
+
+                  # Keep only 30 days of backups.
+                  find "$TARGET_DIR" -type f -name 'gramps-*.tar.gz' -mtime +30 -delete
+              volumeMounts:
+                - name: source-data
+                  mountPath: /source
+                  readOnly: true
+                - name: backup-data
+                  mountPath: /backup
+          volumes:
+            - name: source-data
+              persistentVolumeClaim:
+                claimName: grampsweb
+                readOnly: true
+            - name: backup-data
+              persistentVolumeClaim:
+                claimName: gramps-backup
