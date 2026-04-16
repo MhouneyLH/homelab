@@ -61,3 +61,5 @@ dashboards:
       url: https://raw.githubusercontent.com/MhouneyLH/homelab/master/src/k8s/apps/monitoring/grafana/dashboards/prometheus_dashboard.json
     traefik:
       url: https://raw.githubusercontent.com/MhouneyLH/homelab/master/src/k8s/apps/monitoring/grafana/dashboards/traefik_dashboard.json
+    cert-manager:
+      url: https://raw.githubusercontent.com/MhouneyLH/homelab/master/src/k8s/apps/monitoring/grafana/dashboards/cert_manager_dashboard.json
