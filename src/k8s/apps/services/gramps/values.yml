@@ -41,7 +41,8 @@ gramps:
   # Base URL for generating links in emails (password reset, etc.)
   baseURL: https://gramps.lucas-homelab-festung-der-finsternis.duckdns.org
   tree: "Hünniger Stammbaum"
-  registrationDisabled: false
+  # I dont have smtp setup + i want to have full control over user creation
+  registrationDisabled: true
   disableTelemetry: true
   mediaPrefixTree: false
 
