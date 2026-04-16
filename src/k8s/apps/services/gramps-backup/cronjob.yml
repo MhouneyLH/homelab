@@ -11,6 +11,12 @@ spec:
   concurrencyPolicy: Forbid
   jobTemplate:
     spec:
+      # delete the job pod after one hour as it
+      # acts as a dependency e.g. to the real vpc
+      # and thus can lead to waiting behaviour when e.g.
+      # trying to delete the original pvc
+      # (why I would do somethin? who knows?!)
+      ttlSecondsAfterFinished: 3600
       template:
         spec:
           restartPolicy: OnFailure
