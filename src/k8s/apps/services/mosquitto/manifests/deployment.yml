@@ -35,7 +35,7 @@ spec:
             - name: data
               mountPath: /mosquitto/data
         - name: mosquitto-exporter
-          image: sapcc/mosquitto-exporter:v0.8.0
+          image: sapcc/mosquitto-exporter:0.8.0
           args:
             - --endpoint
             - tcp://127.0.0.1:1883
