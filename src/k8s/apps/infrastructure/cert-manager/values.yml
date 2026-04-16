@@ -1,0 +1,9 @@
+installCRDs: true
+
+# Keep defaults mostly vanilla; cert-manager manages ACME cert lifecycle.
+global:
+  leaderElection:
+    namespace: cert-manager
+
+prometheus:
+  enabled: true

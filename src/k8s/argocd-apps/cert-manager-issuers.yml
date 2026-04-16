@@ -1,0 +1,23 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cert-manager-issuers
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-3" # After cert-manager CRDs/controllers
+spec:
+  project: default
+
+  source:
+    repoURL: https://github.com/MhouneyLH/homelab.git
+    targetRevision: master
+    path: src/k8s/apps/infrastructure/cert-manager/issuers
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: cert-manager
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
