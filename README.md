@@ -22,6 +22,7 @@ This project helps me to continuously learn k8s and related technologies, and to
    - [Being accessible from the outside world](#being-accessible-from-the-outside-world)
    - [Managing internal communication](#managing-internal-communication)
    - [Managing Persistent Storage](#managing-persistent-storage)
+   - [Gramps Backup and Restore](#gramps-backup-and-restore)
    - [RBAC and access management](#rbac-and-access-management)
 5. [Development](#development)
    - [Working with talosctl](#working-with-talosctl)
@@ -163,6 +164,118 @@ TBD
 ### Managing Persistent Storage
 
 Currently some Helm Charts like e.g. the GrampsWeb Chart are using the [local-path-provisioner](./src/k8s/argocd-apps/local-path-provisioner.yml) for provisioning Persistent Volumes. This is a great solution for testing and learning purposes, but in the future I want to have a more robust solution for this.
+
+### Gramps Backup and Restore
+
+#### How is the backup currently done?
+
+For GrampsWeb I currently use a local in-cluster backup mechanism (no cloud dependency yet).
+
+- backup app manifests: [gramps-backup Application](./src/k8s/argocd-apps/gramps-backup.yml)
+- backup workload manifests: [CronJob + PVC](./src/k8s/apps/services/gramps-backup)
+
+What is backed up:
+
+- users database and auth data (`/app/users`)
+- search/index/cache/secret data (`/app/indexdir`, `/app/thumbnail_cache`, `/app/secret`)
+- media files (`/app/media`)
+- Gramps sqlite databases (`/root/.gramps/grampsdb`)
+
+How backups work:
+
+- daily CronJob (`gramps-backup`) creates `tar.gz` archives at 2am
+- backups stored in a dedicated PVC (`gramps-backup`) under `/backup/archives`.
+- retention currently deletes archives older than 30 days
+- the backup PVC is marked with `Delete=false,Prune=false` so it is not accidentally removed by ArgoCD pruning!!!!
+
+Manual backup run:
+
+```bash
+kubectl -n services create job --from=cronjob/gramps-backup gramps-backup-manual-$(date +%s)
+kubectl -n services get jobs,pods | grep gramps-backup
+```
+
+Inspect existing archives:
+
+```bash
+cat <<'EOF' | kubectl apply -f -
+apiVersion: v1
+kind: Pod
+metadata:
+   name: gramps-backup-inspect
+   namespace: services
+spec:
+   restartPolicy: Never
+   containers:
+      - name: inspect
+         image: alpine:3.20
+         command: ["/bin/sh", "-c", "sleep 3600"]
+         volumeMounts:
+            - name: backup
+               mountPath: /backup
+   volumes:
+      - name: backup
+         persistentVolumeClaim:
+            claimName: gramps-backup
+EOF
+kubectl -n services exec gramps-backup-inspect -- ls -lh /backup/archives
+kubectl -n services delete pod gramps-backup-inspect --ignore-not-found
+```
+
+#### How to restore when things break?!
+
+1. Stop writes to avoid inconsistent restore.
+
+```bash
+kubectl -n services scale deployment/grampsweb --replicas=0
+```
+
+2. Start a temporary restore pod that mounts both PVCs (`grampsweb` and `gramps-backup`).
+3. Extract the selected archive from `/backup/archives/*.tar.gz` into the source volume root.
+4. Start Gramps again and validate data.
+
+```bash
+cat <<'EOF' | kubectl apply -f -
+apiVersion: v1
+kind: Pod
+metadata:
+   name: gramps-restore-helper
+   namespace: services
+spec:
+   restartPolicy: Never
+   containers:
+      - name: restore
+         image: alpine:3.20
+         command: ["/bin/sh", "-c", "sleep 3600"]
+         volumeMounts:
+            - name: source-data
+               mountPath: /source
+            - name: backup-data
+               mountPath: /backup
+   volumes:
+      - name: source-data
+         persistentVolumeClaim:
+            claimName: grampsweb
+      - name: backup-data
+         persistentVolumeClaim:
+            claimName: gramps-backup
+EOF
+
+# pick archive and restore it
+kubectl -n services exec gramps-restore-helper -- ls -lh /backup/archives
+kubectl -n services exec gramps-restore-helper -- sh -c "tar -xzf /backup/archives/<your-archive>.tar.gz -C /source"
+
+# cleanup helper pod
+kubectl -n services delete pod gramps-restore-helper --ignore-not-found
+```
+
+```bash
+kubectl -n services scale deployment/grampsweb --replicas=1
+kubectl -n services rollout status deployment/grampsweb
+```
+
+> [!NOTE]
+> **To myself:** Test the goddamn restore regularly! Backup without restore test is not enough. :(
 
 ### RBAC and access management
 
