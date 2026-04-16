@@ -16,19 +16,19 @@ service:
 # entrypoints (listeners)
 ports:
   web:
-    port: 15000
+    port: 80
     expose:
       default: true
-    exposedPort: 15000
+    exposedPort: 80
     protocol: TCP
-    nodePort: 30015
+    nodePort: 30081
   websecure:
-    port: 15001
+    port: 443
     expose:
       default: true
-    exposedPort: 15001
+    exposedPort: 443
     protocol: TCP
-    nodePort: 31501
+    nodePort: 30444
 
 # dashboard
 api:
