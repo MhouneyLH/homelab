@@ -34,6 +34,29 @@ spec:
               subPath: mosquitto.conf
             - name: data
               mountPath: /mosquitto/data
+        - name: mosquitto-exporter
+          image: sapcc/mosquitto-exporter:v0.8.0
+          args:
+            - --endpoint
+            - tcp://127.0.0.1:1883
+            - --bind-address
+            - 0.0.0.0:9234
+          ports:
+            - name: metrics
+              containerPort: 9234
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /metrics
+              port: metrics
+            initialDelaySeconds: 15
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /metrics
+              port: metrics
+            initialDelaySeconds: 5
+            periodSeconds: 15
       volumes:
         - name: config
           configMap:

@@ -6,7 +6,7 @@ replicaCount: 1
 # Required: Set the collector image
 image:
   repository: otel/opentelemetry-collector-contrib
-  tag: ""  # Use chart's default version
+  tag: "" # Use chart's default version
 
 # Run on worker node
 nodeSelector:
@@ -66,18 +66,33 @@ config:
     prometheus/node-exporter:
       config:
         scrape_configs:
-          - job_name: 'node-exporter'
+          - job_name: "node-exporter"
             static_configs:
-              - targets: ['prometheus-prometheus-node-exporter.monitoring.svc.cluster.local:9100']
+              - targets:
+                  [
+                    "prometheus-prometheus-node-exporter.monitoring.svc.cluster.local:9100",
+                  ]
             scrape_interval: 30s
 
     # Scrape kube-state-metrics
     prometheus/kube-state-metrics:
       config:
         scrape_configs:
-          - job_name: 'kube-state-metrics'
+          - job_name: "kube-state-metrics"
             static_configs:
-              - targets: ['prometheus-kube-state-metrics.monitoring.svc.cluster.local:8080']
+              - targets:
+                  [
+                    "prometheus-kube-state-metrics.monitoring.svc.cluster.local:8080",
+                  ]
+            scrape_interval: 30s
+
+    # Scrape Mosquitto exporter metrics
+    prometheus/mosquitto:
+      config:
+        scrape_configs:
+          - job_name: "mosquitto-exporter"
+            static_configs:
+              - targets: ["mosquitto-metrics.services.svc.cluster.local:9234"]
             scrape_interval: 30s
 
     # Collect kubelet metrics directly
@@ -108,7 +123,14 @@ config:
     pipelines:
       # Centralized metrics pipeline - OTelC as collection hub
       metrics:
-        receivers: [otlp, prometheus/node-exporter, prometheus/kube-state-metrics, kubeletstats]
+        receivers:
+          [
+            otlp,
+            prometheus/node-exporter,
+            prometheus/kube-state-metrics,
+            prometheus/mosquitto,
+            kubeletstats,
+          ]
         processors: [memory_limiter, batch]
         exporters: [prometheus]
 
