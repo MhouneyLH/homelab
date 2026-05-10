@@ -1,0 +1,32 @@
+---
+# Usage:
+# kubectl -n services apply -f src/k8s/apps/services/gramps-backup/restore-helper-pod.yml
+# kubectl -n services exec gramps-restore-helper -- ls -lh /backup/archives
+# kubectl -n services exec gramps-restore-helper -- tar -xzf /backup/archives/gramps-YYYYMMDD-HHMMSS.tar.gz -C /source
+# kubectl -n services delete pod gramps-restore-helper --ignore-not-found
+
+# has to be in /source after restore!!
+# grampsweb pod should be stopped before the restore!
+apiVersion: v1
+kind: Pod
+metadata:
+  name: gramps-restore-helper
+  namespace: services
+spec:
+  restartPolicy: Never
+  containers:
+    - name: restore
+      image: alpine:3.22.4
+      command: ["/bin/sh", "-c", "sleep 3600"]
+      volumeMounts:
+        - name: source-data
+          mountPath: /source
+        - name: backup-data
+          mountPath: /backup
+  volumes:
+    - name: source-data
+      persistentVolumeClaim:
+        claimName: grampsweb
+    - name: backup-data
+      persistentVolumeClaim:
+        claimName: gramps-backup

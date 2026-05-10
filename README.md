@@ -172,26 +172,25 @@ Currently some Helm Charts like e.g. the GrampsWeb Chart are using the [local-pa
 For GrampsWeb I currently use a local in-cluster backup mechanism (no cloud dependency yet).
 
 - backup app manifests: [gramps-backup Application](./src/k8s/argocd-apps/gramps-backup.yml)
-- backup workload manifests: [Job + PVC](./src/k8s/apps/services/gramps-backup)
+- backup workload manifests: [CronJob + PVC](./src/k8s/apps/services/gramps-backup)
 
 What is backed up:
 
 - users database and auth data (`/app/users`)
 - search/index/cache/secret data (`/app/indexdir`, `/app/thumbnail_cache`, `/app/secret`)
 - media files (`/app/media`)
-- Gramps sqlite databases (`/root/.gramps/grampsdb`)
+- Gramps sqlite databases and config (`/app/db`, `/app/persist`, `/app/config`)
 
 How backups work (storage):
 
-- one-off Job (`gramps-backup`) writes `tar.gz` archives into `/backup/archives` on the `gramps-backup` PVC
+- nightly CronJob (`gramps-backup`) writes `tar.gz` archives at 2am into `/backup/archives` on the `gramps-backup` PVC
 - retention deletes archives older than 30 days
 - the backup PVC is marked with `Delete=false,Prune=false` so it is not accidentally removed by ArgoCD pruning
 
 Manual backup run:
 
 ```bash
-kubectl -n services delete job gramps-backup --ignore-not-found
-kubectl -n services apply -f src/k8s/apps/services/gramps-backup/cronjob.yml
+kubectl -n services create job --from=cronjob/gramps-backup gramps-backup-manual-$(date +%s)
 kubectl -n services get jobs,pods | grep gramps-backup
 ```
 
@@ -224,52 +223,21 @@ kubectl -n services delete pod gramps-backup-inspect --ignore-not-found
 
 #### How to restore when things break?!
 
-1. Stop writes to avoid inconsistent restore.
+Short restore guide:
 
 ```bash
+# 1) Stop writes
 kubectl -n services scale deployment/grampsweb --replicas=0
-```
 
-2. Start a temporary restore pod that mounts both PVCs (`grampsweb` and `gramps-backup`).
-3. Extract the selected archive from `/backup/archives/*.tar.gz` into the source volume root.
-4. Start Gramps again and validate data.
+# 2) Mount both PVCs in the helper pod
+kubectl -n services apply -f src/k8s/apps/services/gramps-backup/restore-helper-pod.yml
 
-```bash
-cat <<'EOF' | kubectl apply -f -
-apiVersion: v1
-kind: Pod
-metadata:
-   name: gramps-restore-helper
-   namespace: services
-spec:
-   restartPolicy: Never
-   containers:
-      - name: restore
-         image: alpine:3.20
-         command: ["/bin/sh", "-c", "sleep 3600"]
-         volumeMounts:
-            - name: source-data
-               mountPath: /source
-            - name: backup-data
-               mountPath: /backup
-   volumes:
-      - name: source-data
-         persistentVolumeClaim:
-            claimName: grampsweb
-      - name: backup-data
-         persistentVolumeClaim:
-            claimName: gramps-backup
-EOF
-
-# pick archive and restore it
+# 3) Restore selected archive into the grampsweb PVC
 kubectl -n services exec gramps-restore-helper -- ls -lh /backup/archives
-kubectl -n services exec gramps-restore-helper -- sh -c "tar -xzf /backup/archives/<your-archive>.tar.gz -C /source"
+kubectl -n services exec gramps-restore-helper -- tar -xzf /backup/archives/<your-archive>.tar.gz -C /source
 
-# cleanup helper pod
+# 4) Cleanup helper pod and start Gramps again
 kubectl -n services delete pod gramps-restore-helper --ignore-not-found
-```
-
-```bash
 kubectl -n services scale deployment/grampsweb --replicas=1
 kubectl -n services rollout status deployment/grampsweb
 ```
