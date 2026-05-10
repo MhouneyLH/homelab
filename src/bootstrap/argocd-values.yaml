@@ -51,4 +51,5 @@ configs:
   params:
     server.insecure: true
   cm:
-    timeout.reconciliation: 15s
+    timeout.reconciliation: 5s
+    timeout.reconciliation.jitter: 2s
