@@ -172,7 +172,7 @@ Currently some Helm Charts like e.g. the GrampsWeb Chart are using the [local-pa
 For GrampsWeb I currently use a local in-cluster backup mechanism (no cloud dependency yet).
 
 - backup app manifests: [gramps-backup Application](./src/k8s/argocd-apps/gramps-backup.yml)
-- backup workload manifests: [CronJob + PVC](./src/k8s/apps/services/gramps-backup)
+- backup workload manifests: [Job + PVC](./src/k8s/apps/services/gramps-backup)
 
 What is backed up:
 
@@ -181,17 +181,17 @@ What is backed up:
 - media files (`/app/media`)
 - Gramps sqlite databases (`/root/.gramps/grampsdb`)
 
-How backups work:
+How backups work (storage):
 
-- daily CronJob (`gramps-backup`) creates `tar.gz` archives at 2am
-- backups stored in a dedicated PVC (`gramps-backup`) under `/backup/archives`.
-- retention currently deletes archives older than 30 days
-- the backup PVC is marked with `Delete=false,Prune=false` so it is not accidentally removed by ArgoCD pruning!!!!
+- one-off Job (`gramps-backup`) writes `tar.gz` archives into `/backup/archives` on the `gramps-backup` PVC
+- retention deletes archives older than 30 days
+- the backup PVC is marked with `Delete=false,Prune=false` so it is not accidentally removed by ArgoCD pruning
 
 Manual backup run:
 
 ```bash
-kubectl -n services create job --from=cronjob/gramps-backup gramps-backup-manual-$(date +%s)
+kubectl -n services delete job gramps-backup --ignore-not-found
+kubectl -n services apply -f src/k8s/apps/services/gramps-backup/cronjob.yml
 kubectl -n services get jobs,pods | grep gramps-backup
 ```
 

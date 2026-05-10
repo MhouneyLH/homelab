@@ -1,80 +1,76 @@
 ---
 apiVersion: batch/v1
-kind: CronJob
+kind: Job
 metadata:
   name: gramps-backup
   namespace: services
 spec:
-  schedule: "0 2 * * *" # every day at 2:00 am
-  successfulJobsHistoryLimit: 2
-  failedJobsHistoryLimit: 3
-  concurrencyPolicy: Forbid
-  jobTemplate:
+  completions: 1
+  backoffLimit: 3
+  # delete the job pod after one hour as it
+  # acts as a dependency e.g. to the real vpc
+  # and thus can lead to waiting behaviour when e.g.
+  # trying to delete the original pvc
+  # (why I would do somethin? who knows?!)
+  ttlSecondsAfterFinished: 3600
+  template:
     spec:
-      # delete the job pod after one hour as it
-      # acts as a dependency e.g. to the real vpc
-      # and thus can lead to waiting behaviour when e.g.
-      # trying to delete the original pvc
-      # (why I would do somethin? who knows?!)
-      ttlSecondsAfterFinished: 3600
-      template:
-        spec:
-          serviceAccountName: gramps-backup
-          restartPolicy: OnFailure
-          containers:
-            - name: backup
-              image: bitnami/kubectl:1.31.8
-              command:
-                - /bin/sh
-                - -c
-                - |
-                  set -eu
+      serviceAccountName: gramps-backup
+      restartPolicy: OnFailure
+      containers:
+        - name: backup
+          image: rancher/kubectl:v1.36.0
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -eu
 
-                  TS=$(date +%Y%m%d-%H%M%S)
-                  TARGET_DIR="/backup/archives"
-                  TARGET_FILE="$TARGET_DIR/gramps-$TS.tar.gz"
-                  NAMESPACE="services"
-                  APP_SELECTOR="app.kubernetes.io/name=grampsweb"
+              TS=$(date +%Y%m%d-%H%M%S)
+              TARGET_DIR="/backup/archives"
+              TARGET_FILE="$TARGET_DIR/gramps-$TS.tar.gz"
+              NAMESPACE="services"
+              APP_SELECTOR="app.kubernetes.io/name=grampsweb"
 
-                  mkdir -p "$TARGET_DIR"
+              mkdir -p "$TARGET_DIR"
 
-                  POD_NAME=$(kubectl -n "$NAMESPACE" get pods -l "$APP_SELECTOR" \
-                    -o jsonpath='{.items[?(@.status.phase=="Running")].metadata.name}' | awk '{print $1}')
+              POD_NAME=$(kubectl -n "$NAMESPACE" get pods -l "$APP_SELECTOR" \
+                -o jsonpath='{.items[?(@.status.phase=="Running")].metadata.name}' | awk '{print $1}')
 
-                  if [ -z "$POD_NAME" ]; then
-                    echo "No running grampsweb pod found; aborting backup"
-                    exit 1
+              if [ -z "$POD_NAME" ]; then
+                echo "No running grampsweb pod found; aborting backup"
+                exit 1
+              fi
+
+              # Build path list in source pod so missing optional paths do not break backup.
+              kubectl -n "$NAMESPACE" exec "$POD_NAME" -- /bin/sh -lc '
+                set -eu
+                PATHS=""
+                for p in app/users app/indexdir app/thumbnail_cache app/secret app/media app/db app/persist app/config; do
+                  if [ -e "/$p" ]; then
+                    PATHS="$PATHS $p"
                   fi
+                done
 
-                  # Build path list in source pod so missing optional paths do not break backup.
-                  kubectl -n "$NAMESPACE" exec "$POD_NAME" -- /bin/sh -lc '
-                    set -eu
-                    PATHS=""
-                    for p in app/users app/indexdir app/thumbnail_cache app/secret app/media root/.gramps/grampsdb; do
-                      if [ -e "/$p" ]; then
-                        PATHS="$PATHS $p"
-                      fi
-                    done
+                if [ -z "$PATHS" ]; then
+                  echo "No source data found in grampsweb pod; aborting backup"
+                  exit 1
+                fi
 
-                    if [ -z "$PATHS" ]; then
-                      echo "No source data found in grampsweb pod; aborting backup"
-                      exit 1
-                    fi
+                tar -czf - -C / $PATHS
+              ' > "$TARGET_FILE"
 
-                    tar -czf - -C / $PATHS
-                  ' > "$TARGET_FILE"
+              if [ ! -s "$TARGET_FILE" ]; then
+                echo "Backup archive is empty; aborting"
+                exit 1
+              fi
 
-                  if [ ! -s "$TARGET_FILE" ]; then
-                    echo "Backup archive is empty; aborting"
-                    exit 1
-                  fi
-
-                  # Keep only 30 days of backups.
-                  find "$TARGET_DIR" -type f -name 'gramps-*.tar.gz' -mtime +30 -delete
-              volumeMounts:
-                - name: backup-data
-                  mountPath: /backup
-          volumes:
+              # Keep only 30 days of backups.
+              find "$TARGET_DIR" -type f -name 'gramps-*.tar.gz' -mtime +30 -delete
+          volumeMounts:
             - name: backup-data
-              persistentVolumeClaim:
-                claimName: gramps-backup
+              mountPath: /backup
+      volumes:
+        - name: backup-data
+          persistentVolumeClaim:
+            claimName: gramps-backup
