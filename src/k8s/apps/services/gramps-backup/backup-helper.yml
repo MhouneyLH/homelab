@@ -1,0 +1,43 @@
+---
+# Usage:
+# kubectl -n services apply -f src/k8s/apps/services/gramps-backup/backup-helper-pod.yml
+# kubectl -n services exec deploy/gramps-backup-helper -- ls -lh /backup/archives
+# POD=$(kubectl -n services get pod -l app=gramps-backup-helper -o jsonpath='{.items[0].metadata.name}')
+# kubectl -n services cp "$POD":/backup/archives/gramps-YYYYMMDD-HHMMSS.tar.gz ./
+# kubectl -n services cp "$POD":/backup/archives ./gramps-archives
+# kubectl -n services exec deploy/gramps-backup-helper -- tar -czf - -C /backup archives | tar -xzvf - -C .
+# Restore (stop grampsweb first):
+# kubectl -n services exec deploy/gramps-backup-helper -- tar -xzf /backup/archives/gramps-YYYYMMDD-HHMMSS.tar.gz -C /source
+# kubectl -n services delete deployment gramps-backup-helper --ignore-not-found
+# Debian install: sudo apt update && sudo apt install sqlitebrowser
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gramps-backup-helper
+  namespace: services
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gramps-backup-helper
+  template:
+    metadata:
+      labels:
+        app: gramps-backup-helper
+    spec:
+      containers:
+        - name: helper
+          image: alpine:3.22.4
+          command: ["/bin/sh", "-c", "sleep infinity"]
+          volumeMounts:
+            - name: backup
+              mountPath: /backup
+            - name: source
+              mountPath: /source
+      volumes:
+        - name: backup
+          persistentVolumeClaim:
+            claimName: gramps-backup
+        - name: source
+          persistentVolumeClaim:
+            claimName: grampsweb

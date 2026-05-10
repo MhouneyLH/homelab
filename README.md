@@ -197,28 +197,8 @@ kubectl -n services get jobs,pods | grep gramps-backup
 Inspect existing archives:
 
 ```bash
-cat <<'EOF' | kubectl apply -f -
-apiVersion: v1
-kind: Pod
-metadata:
-   name: gramps-backup-inspect
-   namespace: services
-spec:
-   restartPolicy: Never
-   containers:
-      - name: inspect
-         image: alpine:3.20
-         command: ["/bin/sh", "-c", "sleep 3600"]
-         volumeMounts:
-            - name: backup
-               mountPath: /backup
-   volumes:
-      - name: backup
-         persistentVolumeClaim:
-            claimName: gramps-backup
-EOF
-kubectl -n services exec gramps-backup-inspect -- ls -lh /backup/archives
-kubectl -n services delete pod gramps-backup-inspect --ignore-not-found
+kubectl -n services apply -f src/k8s/apps/services/gramps-backup/backup-helper-pod.yml
+kubectl -n services exec deploy/gramps-backup-helper -- ls -lh /backup/archives
 ```
 
 #### How to restore when things break?!
@@ -229,15 +209,14 @@ Short restore guide:
 # 1) Stop writes
 kubectl -n services scale deployment/grampsweb --replicas=0
 
-# 2) Mount both PVCs in the helper pod
-kubectl -n services apply -f src/k8s/apps/services/gramps-backup/restore-helper-pod.yml
+# 2) Ensure the helper pod is running (mounts both PVCs)
+kubectl -n services apply -f src/k8s/apps/services/gramps-backup/backup-helper-pod.yml
 
 # 3) Restore selected archive into the grampsweb PVC
-kubectl -n services exec gramps-restore-helper -- ls -lh /backup/archives
-kubectl -n services exec gramps-restore-helper -- tar -xzf /backup/archives/<your-archive>.tar.gz -C /source
+kubectl -n services exec deploy/gramps-backup-helper -- ls -lh /backup/archives
+kubectl -n services exec deploy/gramps-backup-helper -- tar -xzf /backup/archives/<your-archive>.tar.gz -C /source
 
-# 4) Cleanup helper pod and start Gramps again
-kubectl -n services delete pod gramps-restore-helper --ignore-not-found
+# 4) Start Gramps again and validate data
 kubectl -n services scale deployment/grampsweb --replicas=1
 kubectl -n services rollout status deployment/grampsweb
 ```
