@@ -1,0 +1,24 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "timezone": "UTC",
+  "dependencyDashboard": true,
+  "labels": ["dependencies"],
+  "rangeStrategy": "pin",
+  "prHourlyLimit": 2, // max 2 PRs per hour
+  "prConcurrentLimit": 5, // max 5 open PRs at a time
+  "automerge": false, // do not automerge any updates
+  "platformAutomerge": false, // do not automerge platform updates (e.g., GitHub Actions, Docker)
+  "rebaseWhen": "conflicted",
+  "schedule": ["after 2am and before 6am"],
+  "packageRules": [
+    {
+      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
+      "groupName": "all non-major dependencies"
+    },
+    {
+      "matchUpdateTypes": ["major"],
+      "groupName": "all major dependencies"
+    }
+  ]
+}
