@@ -155,7 +155,15 @@ chmod 600 ~/.kube/config
 
 ### Being accessible from the outside world
 
-TBD
+Quick checks for public IP vs DNS (DuckDNS):
+
+```bash
+curl -4 https://ifconfig.me
+dig +short gramps.lucas-homelab-festung-der-finsternis.duckdns.org A
+```
+
+> [!NOTE]
+> In the past we realized some problems that the dyndns actually updates the IP address correctly. This is why I often checked if the public ip address is actually the same as the one in the DNS record.
 
 ### Managing internal communication
 
