@@ -1,0 +1,16 @@
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRouteTCP
+metadata:
+  name: mosquitto-mqtt
+  namespace: services
+spec:
+  entryPoints:
+    - mqtts # defined in the traefik config to listen on port 8883
+  routes:
+    - match: HostSNI(`mqtt.lucas-homelab-festung-der-finsternis.duckdns.org`)
+      services:
+        - name: mosquitto
+          port: 1883
+  tls:
+    secretName: mosquitto-mqtt-tls
