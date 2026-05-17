@@ -14,3 +14,18 @@ spec:
           port: 1883
   tls:
     secretName: mosquitto-mqtt-tls
+
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRouteTCP
+metadata:
+  name: mosquitto-mqtt-plain
+  namespace: services
+spec:
+  entryPoints:
+    - mqtt
+  routes:
+    - match: HostSNI(`*`)
+      services:
+        - name: mosquitto
+          port: 1883
