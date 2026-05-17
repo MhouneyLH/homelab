@@ -110,6 +110,7 @@ In the `src` directory, there are the distinction of different types of configur
   - [apps](./src/k8s/apps): these are the actual manifests (either written by hand or via helm charts) for the applications running in the cluster
   - [argocd-apps](./src/k8s/argocd-apps): these are the ArgoCD application manifests for actually deploying the applications in the cluster
   - [infrastructure](./src/k8s/infrastructure): these are the manifests for the infrastructure components of the cluster, e.g. CNI, namesspaces, etc. (PROBABLY THIS SHOULD BE HANDLED DIFFERENTLY; I CURRENTLY USE THIS FOR EVERYTHING I DONT KONW WHERE TO PUT)
+  - [rbac](./src/k8s/rbac): cluster-wide RBAC (ClusterRoles and ClusterRoleBindings). App-specific RBAC is co-located with the app or infra component.
 
 ### Bootstrapping
 
@@ -234,7 +235,37 @@ kubectl -n services rollout status deployment/grampsweb
 
 ### RBAC and access management
 
-TBD
+Cluster-wide access rules live in [src/k8s/rbac](src/k8s/rbac). This is the place for ClusterRoles and ClusterRoleBindings that apply across namespaces.
+
+App-specific RBAC should be co-located with the app or infrastructure component under [src/k8s/apps](src/k8s/apps) or [src/k8s/infrastructure](src/k8s/infrastructure).
+
+#### How to grant access (example: read-only)
+
+The read-only example uses the cluster-wide role and user-specific binding defined in [src/k8s/rbac/resource-readers.yml](src/k8s/rbac/resource-readers.yml).
+
+Set the `subjects.name` in the RoleBinding to the username (CN) you issue in the client cert. The current file uses a placeholder (`homelab-read-all-user`) that should be replaced with a real username.
+
+To give a person access, issue a client certificate where the CN matches the username referenced in the RoleBinding. Groups (O=) are optional. Use the helper script to create a user cert and kubeconfig (groups optional): [scripts/create_k8s_user.sh](scripts/create_k8s_user.sh).
+
+```bash
+bash scripts/create_k8s_user.sh --user some-username
+```
+
+To check RBAC before giving out the cert, verify with `kubectl auth can-i`:
+
+```bash
+kubectl auth can-i list pods --as=some-username
+```
+
+#### How to revoke access
+
+With client cert auth there is no native per-cert revocation list. The practical way to revoke access is to remove the user's RoleBinding (or delete the user-specific binding). That keeps authentication working but authorization fails.
+
+If you need to fully invalidate a stolen cert, rotate the cluster CA (or switch to an auth provider that supports real revocation) and re-issue user certs. Deleting the CSR object does not revoke an already issued certificate.
+
+#### Why user-specific bindings
+
+User bindings make offboarding simple: delete a single RoleBinding and access is gone. The tradeoff is more bindings to manage. Groups are still possible if the set of users changes frequently.
 
 ## Development
 
