@@ -36,13 +36,6 @@ ports:
     exposedPort: 1883
     protocol: TCP
     nodePort: 31883
-  mqtts:
-    port: 8883
-    expose:
-      default: true
-    exposedPort: 8883
-    protocol: TCP
-    nodePort: 31884
 
 # dashboard
 api:

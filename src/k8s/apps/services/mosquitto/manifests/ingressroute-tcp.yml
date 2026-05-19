@@ -6,25 +6,9 @@ metadata:
   namespace: services
 spec:
   entryPoints:
-    - mqtts # defined in the traefik config to listen on port 8883
+    - mqtt # defined in the traefik config to listen on port 1883
   routes:
-    - match: HostSNI(`mqtt.lucas-homelab-festung-der-finsternis.duckdns.org`)
-      services:
-        - name: mosquitto
-          port: 1883
-  tls:
-    secretName: mosquitto-mqtt-tls
-
----
-apiVersion: traefik.io/v1alpha1
-kind: IngressRouteTCP
-metadata:
-  name: mosquitto-mqtt-plain
-  namespace: services
-spec:
-  entryPoints:
-    - mqtt
-  routes:
+      # Plain MQTT has no SNI, so use HostSNI(*) and rely on local DNS/hosts.
     - match: HostSNI(`*`)
       services:
         - name: mosquitto
