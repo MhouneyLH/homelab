@@ -1,0 +1,139 @@
+{
+  "name": "WG-Gesucht - Gantt Chart Viewer",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "wg-gesucht",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "a1b2c3d4-0002-0002-0002-000000000001",
+      "name": "GET /wg-gesucht",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -600,
+        0
+      ],
+      "webhookId": "wg-gesucht-gantt-view"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "documentId": {
+          "__rl": true,
+          "value": "REPLACE_WITH_YOUR_SPREADSHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Requests",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "id": "a1b2c3d4-0002-0002-0002-000000000002",
+      "name": "Read All Requests",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -360,
+        0
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Google Sheets"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "var rows = $input.all();\nvar data = rows.map(function(r) {\n  return {\n    name: String(r.json['Guest Name'] || 'Unknown'),\n    email: String(r.json['From Email'] || ''),\n    checkIn: String(r.json['Check-In'] || ''),\n    checkOut: String(r.json['Check-Out'] || ''),\n    nights: String(r.json['Nights'] || ''),\n    summary: String(r.json['Summary'] || ''),\n    status: String(r.json['Status'] || 'Pending')\n  };\n}).filter(function(r) { return r.checkIn && r.checkOut; });\n\nvar total    = rows.length;\nvar pending  = data.filter(function(r) { return r.status === 'Pending';  }).length;\nvar accepted = data.filter(function(r) { return r.status === 'Accepted'; }).length;\nvar declined = data.filter(function(r) { return r.status === 'Declined'; }).length;\n\nvar p = [];\np.push('<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"UTF-8\">');\np.push('<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">');\np.push('<title>WG-Gesucht Requests</title>');\np.push('<link href=\"https://cdn.jsdelivr.net/npm/vis-timeline@7.7.3/dist/vis-timeline-graph2d.min.css\" rel=\"stylesheet\">');\np.push('<style>');\np.push('*{box-sizing:border-box;margin:0;padding:0}');\np.push('body{font-family:-apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;background:#f8f9fa;padding:24px;color:#333}');\np.push('h1{font-size:22px;font-weight:600;margin-bottom:20px}');\np.push('.stats{display:flex;gap:12px;margin-bottom:24px;flex-wrap:wrap}');\np.push('.stat{background:white;padding:16px 20px;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.08);min-width:110px}');\np.push('.stat-value{font-size:28px;font-weight:700}');\np.push('.stat-label{font-size:12px;color:#777;margin-top:2px;text-transform:uppercase;letter-spacing:.5px}');\np.push('.stat.pending .stat-value{color:#f59e0b}');\np.push('.stat.accepted .stat-value{color:#10b981}');\np.push('.stat.declined .stat-value{color:#ef4444}');\np.push('.wrap{background:white;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.08);padding:16px}');\np.push('.legend{display:flex;gap:16px;margin-bottom:16px;font-size:13px}');\np.push('.legend-item{display:flex;align-items:center;gap:6px}');\np.push('.legend-dot{width:12px;height:12px;border-radius:3px}');\np.push('.vis-item.pending{background:#fef3c7!important;border-color:#f59e0b!important;color:#92400e!important}');\np.push('.vis-item.accepted{background:#d1fae5!important;border-color:#10b981!important;color:#064e3b!important}');\np.push('.vis-item.declined{background:#fee2e2!important;border-color:#ef4444!important;color:#7f1d1d!important}');\np.push('.vis-item.vis-selected{border-width:2px}');\np.push('.empty{text-align:center;padding:40px;color:#aaa}');\np.push('</style></head><body>');\np.push('<h1>WG-Gesucht Rental Requests</h1>');\np.push('<div class=\"stats\">');\np.push('<div class=\"stat\"><div class=\"stat-value\">' + total + '</div><div class=\"stat-label\">Total</div></div>');\np.push('<div class=\"stat pending\"><div class=\"stat-value\">' + pending + '</div><div class=\"stat-label\">Pending</div></div>');\np.push('<div class=\"stat accepted\"><div class=\"stat-value\">' + accepted + '</div><div class=\"stat-label\">Accepted</div></div>');\np.push('<div class=\"stat declined\"><div class=\"stat-value\">' + declined + '</div><div class=\"stat-label\">Declined</div></div>');\np.push('</div>');\np.push('<div class=\"wrap\">');\np.push('<div class=\"legend\">');\np.push('<div class=\"legend-item\"><div class=\"legend-dot\" style=\"background:#fef3c7;border:2px solid #f59e0b\"></div>Pending</div>');\np.push('<div class=\"legend-item\"><div class=\"legend-dot\" style=\"background:#d1fae5;border:2px solid #10b981\"></div>Accepted</div>');\np.push('<div class=\"legend-item\"><div class=\"legend-dot\" style=\"background:#fee2e2;border:2px solid #ef4444\"></div>Declined</div>');\np.push('</div>');\np.push('<div id=\"vis\"></div>');\np.push('</div>');\np.push('<script src=\"https://cdn.jsdelivr.net/npm/vis-timeline@7.7.3/dist/vis-timeline-graph2d.min.js\"></script>');\np.push('<script>');\np.push('var DATA = ' + JSON.stringify(data) + ';');\np.push('if (!DATA.length) {');\np.push('  document.getElementById(\"vis\").innerHTML = \"<div class=\\\"empty\\\">No requests with valid dates yet. Check that Check-In and Check-Out columns are filled.</div>\";');\np.push('} else {');\np.push('  var items = new vis.DataSet(DATA.map(function(r, i) {');\np.push('    return {');\np.push('      id: i,');\np.push('      content: r.name + (r.nights ? \" (\" + r.nights + \"n)\" : \"\"),');\np.push('      start: r.checkIn,');\np.push('      end: r.checkOut,');\np.push('      className: r.status.toLowerCase(),');\np.push('      title: \"<b>\" + r.name + \"</b><br>\" + r.email + \"<br>\" + r.checkIn + \" \\u2192 \" + r.checkOut + (r.nights ? \" (\" + r.nights + \" nights)\" : \"\") + \"<br><em>\" + r.summary + \"</em>\"');\np.push('    };');\np.push('  }));');\np.push('  new vis.Timeline(document.getElementById(\"vis\"), items, {');\np.push('    type: \"range\",');\np.push('    orientation: { axis: \"top\" },');\np.push('    stack: true,');\np.push('    moveable: true,');\np.push('    zoomable: true,');\np.push('    selectable: false,');\np.push('    tooltip: { followMouse: true, delay: 200 }');\np.push('  });');\np.push('}');\np.push('</script></body></html>');\n\nreturn [{ json: { html: p.join('\\n') } }];"
+      },
+      "id": "a1b2c3d4-0002-0002-0002-000000000003",
+      "name": "Generate Gantt HTML",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -120,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.html }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "text/html; charset=utf-8"
+              }
+            ]
+          }
+        }
+      },
+      "id": "a1b2c3d4-0002-0002-0002-000000000004",
+      "name": "Respond with HTML",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        120,
+        0
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "GET /wg-gesucht": {
+      "main": [
+        [
+          {
+            "node": "Read All Requests",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read All Requests": {
+      "main": [
+        [
+          {
+            "node": "Generate Gantt HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Gantt HTML": {
+      "main": [
+        [
+          {
+            "node": "Respond with HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "id": "wg-gesucht-gantt",
+  "tags": [
+    {
+      "name": "wg-gesucht"
+    }
+  ]
+}

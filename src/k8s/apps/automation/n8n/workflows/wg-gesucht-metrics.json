@@ -1,0 +1,139 @@
+{
+  "name": "WG-Gesucht - Prometheus Metrics",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "wg-gesucht-metrics",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "a1b2c3d4-0003-0003-0003-000000000001",
+      "name": "GET /wg-gesucht-metrics",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -600,
+        0
+      ],
+      "webhookId": "wg-gesucht-metrics"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "documentId": {
+          "__rl": true,
+          "value": "REPLACE_WITH_YOUR_SPREADSHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Requests",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "id": "a1b2c3d4-0003-0003-0003-000000000002",
+      "name": "Read Requests",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -360,
+        0
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Google Sheets"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "var rows = $input.all();\n\nvar statusCounts  = {};\nvar monthCounts   = {};\nvar nightsByStatus = {};\n\nrows.forEach(function(r) {\n  var status   = r.json['Status']   || 'Pending';\n  var nights   = parseInt(r.json['Nights'] || '0', 10) || 0;\n  var received = String(r.json['Received'] || '');\n\n  statusCounts[status]   = (statusCounts[status]   || 0) + 1;\n  nightsByStatus[status] = (nightsByStatus[status] || 0) + nights;\n\n  if (received.length >= 7) {\n    var month = received.substring(0, 7); // YYYY-MM\n    monthCounts[month] = (monthCounts[month] || 0) + 1;\n  }\n});\n\nvar lines = [];\n\nlines.push('# HELP wg_gesucht_requests_total Current rental requests by status');\nlines.push('# TYPE wg_gesucht_requests_total gauge');\n['Pending', 'Accepted', 'Declined'].forEach(function(s) {\n  lines.push('wg_gesucht_requests_total{status=\"' + s + '\"} ' + (statusCounts[s] || 0));\n});\n\nlines.push('# HELP wg_gesucht_requests_monthly Requests received per calendar month');\nlines.push('# TYPE wg_gesucht_requests_monthly gauge');\nObject.keys(monthCounts).sort().forEach(function(m) {\n  lines.push('wg_gesucht_requests_monthly{month=\"' + m + '\"} ' + monthCounts[m]);\n});\n\nlines.push('# HELP wg_gesucht_nights_requested Total nights requested by status');\nlines.push('# TYPE wg_gesucht_nights_requested gauge');\n['Pending', 'Accepted', 'Declined'].forEach(function(s) {\n  lines.push('wg_gesucht_nights_requested{status=\"' + s + '\"} ' + (nightsByStatus[s] || 0));\n});\n\nlines.push('');\nreturn [{ json: { metrics: lines.join('\\n') } }];"
+      },
+      "id": "a1b2c3d4-0003-0003-0003-000000000003",
+      "name": "Build Prometheus Metrics",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -120,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.metrics }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "text/plain; version=0.0.4; charset=utf-8"
+              }
+            ]
+          }
+        }
+      },
+      "id": "a1b2c3d4-0003-0003-0003-000000000004",
+      "name": "Respond with Metrics",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        120,
+        0
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "GET /wg-gesucht-metrics": {
+      "main": [
+        [
+          {
+            "node": "Read Requests",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Requests": {
+      "main": [
+        [
+          {
+            "node": "Build Prometheus Metrics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Prometheus Metrics": {
+      "main": [
+        [
+          {
+            "node": "Respond with Metrics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "id": "wg-gesucht-metrics",
+  "tags": [
+    {
+      "name": "wg-gesucht"
+    }
+  ]
+}

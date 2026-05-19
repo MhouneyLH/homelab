@@ -1,0 +1,195 @@
+{
+  "name": "WG-Gesucht - Process Rental Requests",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "filters": {
+          "sender": "webmaster@wg-gesucht.de"
+        },
+        "labelIds": [
+          "REPLACE_WITH_YOUR_GMAIL_LABEL_ID"
+        ],
+        "options": {}
+      },
+      "id": "a1b2c3d4-0001-0001-0001-000000000001",
+      "name": "Watch WG-Gesucht Emails",
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -600,
+        0
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Gmail"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "text": "=Subject: {{ $json.subject }}\nFrom: {{ $json.from.value[0].name }} <{{ $json.from.value[0].address }}>\nReceived: {{ $json.date }}\n\nEmail body:\n{{ $json.text }}",
+        "attributes": {
+          "attributes": [
+            {
+              "name": "guestName",
+              "description": "Full name of the person requesting to rent or stay. Look in the body and signature. Return 'Unknown' if not found.",
+              "required": true
+            },
+            {
+              "name": "checkInDate",
+              "description": "Requested check-in or arrival date in ISO 8601 format YYYY-MM-DD. Parse German date formats too (e.g. '15. Maerz 2025' becomes '2025-03-15'). Return empty string if not determinable.",
+              "required": false
+            },
+            {
+              "name": "checkOutDate",
+              "description": "Requested check-out or departure date in ISO 8601 format YYYY-MM-DD. If a duration is given (e.g. '2 Wochen'), calculate from check-in. Return empty string if not determinable.",
+              "required": false
+            },
+            {
+              "name": "numberOfNights",
+              "description": "Total number of nights as an integer. Calculate from check-in and check-out if not stated. Return 0 if unknown.",
+              "required": false
+            },
+            {
+              "name": "requestSummary",
+              "description": "One English sentence summarising who is requesting and the key details of their stay.",
+              "required": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a1b2c3d4-0001-0001-0001-000000000002",
+      "name": "Extract Stay Information",
+      "type": "@n8n/n8n-nodes-langchain.informationExtractor",
+      "typeVersion": 1.1,
+      "position": [
+        -320,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "model": "claude-3-5-haiku-20241022",
+        "options": {}
+      },
+      "id": "a1b2c3d4-0001-0001-0001-000000000003",
+      "name": "Claude",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.2,
+      "position": [
+        -320,
+        220
+      ],
+      "credentials": {
+        "anthropicApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Anthropic"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "REPLACE_WITH_YOUR_SPREADSHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Requests",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Received": "={{ $now.toISO() }}",
+            "From Email": "={{ $json.from.value[0].address }}",
+            "Guest Name": "={{ $('Extract Stay Information').item.json.output.guestName ?? 'Unknown' }}",
+            "Check-In": "={{ $('Extract Stay Information').item.json.output.checkInDate ?? '' }}",
+            "Check-Out": "={{ $('Extract Stay Information').item.json.output.checkOutDate ?? '' }}",
+            "Nights": "={{ $('Extract Stay Information').item.json.output.numberOfNights ?? '' }}",
+            "Summary": "={{ $('Extract Stay Information').item.json.output.requestSummary }}",
+            "Subject": "={{ $('Watch WG-Gesucht Emails').item.json.subject }}",
+            "Status": "Pending"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "id": "a1b2c3d4-0001-0001-0001-000000000004",
+      "name": "Save to Google Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -60,
+        0
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Google Sheets"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Watch WG-Gesucht Emails": {
+      "main": [
+        [
+          {
+            "node": "Extract Stay Information",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Stay Information": {
+      "main": [
+        [
+          {
+            "node": "Save to Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Extract Stay Information",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "id": "wg-gesucht-processor",
+  "tags": [
+    {
+      "name": "wg-gesucht"
+    }
+  ]
+}
