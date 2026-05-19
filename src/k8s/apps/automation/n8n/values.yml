@@ -17,3 +17,9 @@ extraEnvVars:
   # WEBHOOK_URL: "https://n8n.your-domain.com/"
 
   N8N_SOURCE_CONTROL_DEFAULT_CONNECTED_REPOSITORY: "git@github.com:MhouneyLH/homelab.git"
+
+  # Prometheus metrics endpoint at /metrics
+  N8N_METRICS: "true"
+  N8N_METRICS_INCLUDE_WORKFLOW_ID_LABEL: "true"
+  N8N_METRICS_INCLUDE_NODE_TYPE_LABEL: "true"
+  N8N_METRICS_INCLUDE_API_ENDPOINTS: "true"
