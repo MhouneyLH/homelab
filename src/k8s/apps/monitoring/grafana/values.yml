@@ -28,11 +28,6 @@ datasources:
         access: proxy
         isDefault: true
 
-      - name: OpenTelemetry
-        type: prometheus
-        url: http://otelc-opentelemetry-collector.monitoring.svc.cluster.local:8889
-        access: proxy
-
 # Import some useful dashboards
 dashboardProviders:
   dashboardproviders.yaml:
@@ -65,3 +60,5 @@ dashboards:
       url: https://raw.githubusercontent.com/MhouneyLH/homelab/master/src/k8s/apps/monitoring/grafana/dashboards/cert_manager_dashboard.json
     wg-gesucht:
       url: https://raw.githubusercontent.com/MhouneyLH/homelab/master/src/k8s/apps/monitoring/grafana/dashboards/wg_gesucht_dashboard.json
+    n8n-health-overview:
+      url: https://raw.githubusercontent.com/MhouneyLH/homelab/master/src/k8s/apps/monitoring/grafana/dashboards/n8n_health_overview_dashboard.json
