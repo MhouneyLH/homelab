@@ -8,3 +8,12 @@ nodeSelector:
 
 extraEnvVars:
   N8N_SECURE_COOKIE: "false"
+
+  # Expose the REST API so workflows can be imported via curl/CI
+  N8N_PUBLIC_API_DISABLED: "false"
+
+  # Allow workflows to use the n8n webhook base URL correctly
+  # Set this to however n8n is reachable externally (Traefik hostname or NodePort URL)
+  # WEBHOOK_URL: "https://n8n.your-domain.com/"
+
+  N8N_SOURCE_CONTROL_DEFAULT_CONNECTED_REPOSITORY: "git@github.com:MhouneyLH/homelab.git"
