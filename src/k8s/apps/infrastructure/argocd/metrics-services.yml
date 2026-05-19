@@ -1,0 +1,72 @@
+---
+# Exposes the Prometheus metrics ports for each ArgoCD component.
+# These are missing from the bootstrap Helm install because metrics.enabled
+# was added to argocd-values.yaml after the initial terraform apply.
+# The OpenTelemetry Collector picks them up via annotation-based discovery.
+apiVersion: v1
+kind: Service
+metadata:
+  name: argocd-application-controller-metrics
+  namespace: argocd
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8082"
+spec:
+  clusterIP: None
+  selector:
+    app.kubernetes.io/name: argocd-application-controller
+  ports:
+    - name: metrics
+      port: 8082
+      targetPort: 8082
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: argocd-server-metrics
+  namespace: argocd
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8083"
+spec:
+  clusterIP: None
+  selector:
+    app.kubernetes.io/name: argocd-server
+  ports:
+    - name: metrics
+      port: 8083
+      targetPort: 8083
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: argocd-repo-server-metrics
+  namespace: argocd
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8084"
+spec:
+  clusterIP: None
+  selector:
+    app.kubernetes.io/name: argocd-repo-server
+  ports:
+    - name: metrics
+      port: 8084
+      targetPort: 8084
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: argocd-applicationset-controller-metrics
+  namespace: argocd
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8080"
+spec:
+  clusterIP: None
+  selector:
+    app.kubernetes.io/name: argocd-applicationset-controller
+  ports:
+    - name: metrics
+      port: 8080
+      targetPort: 8080
