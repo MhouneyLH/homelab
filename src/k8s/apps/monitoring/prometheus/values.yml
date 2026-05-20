@@ -87,7 +87,7 @@ extraScrapeConfigs: |
   # Tempo metrics
   - job_name: 'tempo'
     static_configs:
-      - targets: ['tempo.monitoring.svc.cluster.local:3100']
+      - targets: ['tempo.monitoring.svc.cluster.local:3200']
     scrape_interval: 30s
 
   # n8n instance metrics (requires N8N_METRICS=true)
