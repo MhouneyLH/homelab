@@ -1,0 +1,12 @@
+---
+config:
+  logLevel: info
+  serverPort: 3101
+  clients:
+    - url: http://loki.monitoring.svc.cluster.local:3100/loki/api/v1/push
+
+# DaemonSet must reach control-plane node too
+tolerations:
+  - key: node-role.kubernetes.io/control-plane
+    operator: Exists
+    effect: NoSchedule
