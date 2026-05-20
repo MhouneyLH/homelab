@@ -35,6 +35,26 @@ datasources:
         access: proxy
         uid: loki
 
+      - name: Tempo
+        type: tempo
+        url: http://tempo.monitoring.svc.cluster.local:3100
+        access: proxy
+        uid: tempo
+        jsonData:
+          tracesToLogsV2:
+            datasourceUid: loki
+            spanStartTimeShift: "-1m"
+            spanEndTimeShift: "1m"
+            tags:
+              - key: k8s.namespace.name
+                value: namespace
+              - key: k8s.pod.name
+                value: pod
+          serviceMap:
+            datasourceUid: prometheus
+          nodeGraph:
+            enabled: true
+
 # Import some useful dashboards
 dashboardProviders:
   dashboardproviders.yaml:

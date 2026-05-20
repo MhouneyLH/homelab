@@ -38,12 +38,22 @@ clusterRole:
     - nonResourceURLs: ["/metrics"]
       verbs: ["get"]
 
-# Enable metrics port for Prometheus scraping (port 8889)
+# Expose metrics scraping port + OTLP ports so apps can send traces
 ports:
   metrics:
     enabled: true
     containerPort: 8889
     servicePort: 8889
+    protocol: TCP
+  otlp:
+    enabled: true
+    containerPort: 4317
+    servicePort: 4317
+    protocol: TCP
+  otlp-http:
+    enabled: true
+    containerPort: 4318
+    servicePort: 4318
     protocol: TCP
 
 # Minimal OpenTelemetry Collector configuration
@@ -148,6 +158,12 @@ config:
     prometheus:
       endpoint: "${env:MY_POD_IP}:8889"
 
+    # Forward traces to Tempo
+    otlp/tempo:
+      endpoint: tempo.monitoring.svc.cluster.local:4317
+      tls:
+        insecure: true
+
   service:
     extensions: [health_check]
 
@@ -165,6 +181,12 @@ config:
           ]
         processors: [memory_limiter, batch]
         exporters: [prometheus]
+
+      # Forward any OTLP traces received on port 4317/4318 to Tempo
+      traces:
+        receivers: [otlp]
+        processors: [memory_limiter, batch]
+        exporters: [otlp/tempo]
 
 # No need for ServiceMonitor - Prometheus scrapes directly
 serviceMonitor:
