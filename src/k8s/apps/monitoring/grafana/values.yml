@@ -24,9 +24,16 @@ datasources:
     datasources:
       - name: Prometheus
         type: prometheus
-        url: http://prometheus-server.monitoring.svc.cluster.local # Simple prometheus service name
+        url: http://prometheus-server.monitoring.svc.cluster.local
         access: proxy
         isDefault: true
+        uid: prometheus
+
+      - name: Loki
+        type: loki
+        url: http://loki.monitoring.svc.cluster.local:3100
+        access: proxy
+        uid: loki
 
 # Import some useful dashboards
 dashboardProviders:
@@ -62,3 +69,5 @@ dashboards:
       url: https://raw.githubusercontent.com/MhouneyLH/homelab/master/src/k8s/apps/monitoring/grafana/dashboards/wg_gesucht_dashboard.json
     n8n-health-overview:
       url: https://raw.githubusercontent.com/MhouneyLH/homelab/master/src/k8s/apps/monitoring/grafana/dashboards/n8n_health_overview_dashboard.json
+    loki-overview:
+      url: https://raw.githubusercontent.com/MhouneyLH/homelab/master/src/k8s/apps/monitoring/grafana/dashboards/loki_overview_dashboard.json
