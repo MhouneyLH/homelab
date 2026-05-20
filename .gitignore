@@ -5,6 +5,9 @@ k8s-users
 # n8n owner credentials — real values live here, never commit
 src/k8s/apps/automation/n8n/.env
 
+# grafana admin credentials — real values live here, never commit
+src/k8s/apps/monitoring/grafana/.env
+
 # Created by https://www.toptal.com/developers/gitignore/api/terraform
 # Edit at https://www.toptal.com/developers/gitignore?templates=terraform
 
