@@ -78,6 +78,18 @@ extraScrapeConfigs: |
       - targets: ['otelc-opentelemetry-collector.monitoring.svc.cluster.local:8889']
     scrape_interval: 30s
 
+  # Loki metrics (ingestion rate, chunk counts, query latency, etc.)
+  - job_name: 'loki'
+    static_configs:
+      - targets: ['loki.monitoring.svc.cluster.local:3100']
+    scrape_interval: 30s
+
+  # Tempo metrics
+  - job_name: 'tempo'
+    static_configs:
+      - targets: ['tempo.monitoring.svc.cluster.local:3100']
+    scrape_interval: 30s
+
   # n8n instance metrics (requires N8N_METRICS=true)
   - job_name: 'n8n'
     static_configs:
