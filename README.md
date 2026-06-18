@@ -197,6 +197,7 @@ What is backed up:
 - search/index/cache/secret data (`/app/indexdir`, `/app/thumbnail_cache`, `/app/secret`)
 - media files (`/app/media`)
 - Gramps sqlite databases and config (`/app/db`, `/app/persist`, `/app/config`)
+- Gramps family tree database (`/root/.gramps/grampsdb`) — **this is the actual genealogy data**
 
 How backups work (storage):
 
@@ -220,22 +221,68 @@ kubectl -n services exec deploy/gramps-backup-helper -- ls -lh /backup/archives
 
 #### How to restore when things break?!
 
-Short restore guide:
+> [!WARNING]
+> **Do NOT restore `users.sqlite` via the helper pod.** Grampsweb runs alembic migrations on every startup and reinitializes `users.sqlite`, wiping any file you restored while the pod was down. Users must be injected directly into the live running pod after startup. See the users restore section below.
+
+> [!WARNING]
+> **Do NOT open `/firstrun` in the browser after the pod starts.** This triggers grampsweb to overwrite `users.sqlite` with a fresh user. Always navigate directly to `/login` instead — this skips the firstrun flow and preserves any users already in the database.
+
+**Restore media, family tree DB, and other data:**
 
 ```bash
 # 1) Stop writes
 kubectl -n services scale deployment/grampsweb --replicas=0
 
-# 2) Ensure the helper pod is running (mounts both PVCs)
-kubectl -n services apply -f src/k8s/apps/services/gramps-backup/backup-helper-pod.yml
+# 2) Start the helper pod (mounts backup PVC at /backup and grampsweb PVC at /source)
+kubectl -n services apply -f src/k8s/apps/services/gramps-backup/backup-helper.yml
 
-# 3) Restore selected archive into the grampsweb PVC
+# 3) List available archives and pick one
 kubectl -n services exec deploy/gramps-backup-helper -- ls -lh /backup/archives
-kubectl -n services exec deploy/gramps-backup-helper -- tar -xzf /backup/archives/<your-archive>.tar.gz -C /source
 
-# 4) Start Gramps again and validate data
+# 4) Restore selected archive into the grampsweb PVC (excludes users.sqlite — restored separately)
+kubectl -n services exec deploy/gramps-backup-helper -- tar -xzf /backup/archives/<your-archive>.tar.gz \
+  --exclude=app/users/users.sqlite -C /source
+
+# 5) Verify files landed correctly
+kubectl -n services exec deploy/gramps-backup-helper -- find /source -type f
+
+# 6) Clean up helper and start Gramps again
+kubectl -n services delete deployment gramps-backup-helper --ignore-not-found
 kubectl -n services scale deployment/grampsweb --replicas=1
 kubectl -n services rollout status deployment/grampsweb
+```
+
+**Restore users (must be done into the live running pod):**
+
+```bash
+# 1) Extract user rows from a backup archive
+kubectl -n services apply -f src/k8s/apps/services/gramps-backup/backup-helper.yml
+kubectl -n services exec deploy/gramps-backup-helper -- \
+  tar -xzf /backup/archives/<your-archive>.tar.gz -C /tmp app/users/users.sqlite
+kubectl -n services exec deploy/gramps-backup-helper -- \
+  sqlite3 /tmp/app/users/users.sqlite 'SELECT id,name,email,fullname,pwhash,role,tree FROM users;'
+
+# 2) Make sure grampsweb is running (so it has already completed its startup migrations)
+kubectl -n services rollout status deployment/grampsweb
+
+# 3) Inject the users directly into the live pod
+kubectl -n services exec deploy/grampsweb -- python3 -c "
+import sqlite3
+conn = sqlite3.connect('/app/users/users.sqlite')
+cur = conn.cursor()
+cur.execute(\"INSERT OR IGNORE INTO trees (id) VALUES ('<tree-uuid>')\")
+cur.executemany(
+  'INSERT OR REPLACE INTO users (id,name,email,fullname,pwhash,role,tree) VALUES (?,?,?,?,?,?,?)',
+  [
+    ('<id>', '<name>', '<email>', '<fullname>', '<pwhash>', <role>, '<tree>'),
+    # ... one tuple per user from step 1
+  ]
+)
+conn.commit()
+cur.execute('SELECT name, role FROM users')
+print(cur.fetchall())
+conn.close()
+"
 ```
 
 > [!NOTE]
