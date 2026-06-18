@@ -30,5 +30,4 @@ variable "workers" {
     ip   = string
     disk = string
   }))
-  sensitive = true
 }

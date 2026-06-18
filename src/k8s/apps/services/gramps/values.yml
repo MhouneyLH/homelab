@@ -27,19 +27,19 @@ ingress:
     traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
     traefik.ingress.kubernetes.io/router.tls: "true"
   hosts:
-    - host: gramps.lucas-homelab-festung-der-finsternis.duckdns.org
+    - host: gramps.lucas-festung.dynv6.net
       paths:
         - path: /
           pathType: Prefix
   tls:
     - secretName: gramps-tls
       hosts:
-        - gramps.lucas-homelab-festung-der-finsternis.duckdns.org
+        - gramps.lucas-festung.dynv6.net
 
 # gramps specific configuration
 gramps:
   # Base URL for generating links in emails (password reset, etc.)
-  baseURL: https://gramps.lucas-homelab-festung-der-finsternis.duckdns.org
+  baseURL: https://gramps.lucas-festung.dynv6.net
   tree: "Hünniger Stammbaum"
   # I dont have smtp setup + i want to have full control over user creation
   registrationDisabled: true

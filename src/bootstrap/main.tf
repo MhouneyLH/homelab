@@ -53,4 +53,5 @@ output "argocd_server_admin_password" {
 output "argocd_ui_url" {
   description = "URL to access ArgoCD UI"
   value       = "http://${var.argocd_ui_host}:30080"
+  sensitive = false
 }

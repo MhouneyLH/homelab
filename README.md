@@ -137,6 +137,14 @@ terraform init
 terraform apply
 ```
 
+Once ArgoCD is running, deploy all applications by applying the root app (app-of-apps pattern):
+
+```bash
+kubectl apply -f src/k8s/root-app.yaml
+```
+
+ArgoCD will pick this up and automatically deploy everything in `src/k8s/argocd-apps/`.
+
 ### Accessing the cluster
 
 For being able to access the cluster, you need to have the kubeconfig file. You can get it from the terraform output like this:
@@ -156,11 +164,11 @@ chmod 600 ~/.kube/config
 
 ### Being accessible from the outside world
 
-Quick checks for public IP vs DNS (DuckDNS):
+Quick checks for public IP vs DNS:
 
 ```bash
 curl -4 https://ifconfig.me
-dig +short gramps.lucas-homelab-festung-der-finsternis.duckdns.org A
+dig +short gramps.lucas-festung.dynv6.net A
 ```
 
 > [!NOTE]
@@ -303,6 +311,29 @@ talosctl -n the-ip-of-the-node edit mc --mode=staged
 ## Learnings
 
 Next to learning more and more about k8s itself, there were some things I had to learn the hard way...
+
+### Node IP Change Broke Internal Cluster Networking
+
+When the IPs of the nodes changed, the cluster broke internally — pods could no longer reach the Kubernetes API server via its internal ClusterIP (`10.96.0.1:443`), which meant things like ArgoCD Redis couldn't start at all.
+
+**What happened step by step:**
+
+- Node IPs changed → Talos machine config was re-applied with new IPs → cluster certs got regenerated
+- `kube-proxy` (the component that routes traffic from ClusterIPs to real pod/node IPs) was running in `nftables` mode
+- There is a bug in kube-proxy's nftables mode: for the special `kubernetes` service (which points to the API server node IP, not a pod IP), the DNAT rule inside the nftables chain was never written — the chain was completely empty
+- Result: any pod trying to reach `10.96.0.1:443` (= the Kubernetes API) got `connection refused`
+
+**How it was fixed:**
+
+- Confirmed the issue by running a debug pod and checking nftables rules directly on the node — the endpoint chain for the kubernetes service was empty
+- Switched kube-proxy from `nftables` mode to `iptables` mode by patching the DaemonSet: changed `--proxy-mode=nftables` → `--proxy-mode=iptables`
+- After the rollout, the iptables DNAT rules were correctly created and pods could reach the API server again
+
+**Extra mess along the way:**
+
+- The old ArgoCD namespace was stuck in `Terminating` because an ArgoCD `Application` resource had a finalizer (`resources-finalizer.argocd.argoproj.io`) — and since ArgoCD itself was already gone, no controller could process it. Fixed by patching the finalizer list to empty: `kubectl patch application.argoproj.io root-app -n argocd -p '{"metadata":{"finalizers":[]}}' --type=merge`
+- Stale Helm release secrets (`sh.helm.release.v1.argocd.v1`) blocked Terraform from reinstalling ArgoCD. Fixed by deleting the secret manually before re-running `terraform apply`
+- The `workers` and `argocd_ui_host` Terraform variables were marked `sensitive = true`, but Terraform does not allow sensitive values as `for_each` keys or in outputs — removed `sensitive = true` from those variables
 
 ### Ventoy _Fiebertraum_
 
