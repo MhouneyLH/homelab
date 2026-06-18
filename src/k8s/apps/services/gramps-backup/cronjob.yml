@@ -57,7 +57,7 @@ spec:
                   $KUBECTL_BIN -n "$NAMESPACE" exec "$POD_NAME" -- /bin/sh -lc '
                     set -eu
                     PATHS=""
-                    for p in app/users app/indexdir app/thumbnail_cache app/secret app/media app/db app/persist app/config; do
+                    for p in app/users app/indexdir app/thumbnail_cache app/secret app/media app/db app/persist app/config root/.gramps/grampsdb; do
                       if [ -e "/$p" ]; then
                         PATHS="$PATHS $p"
                       fi
