@@ -16,6 +16,6 @@
 
   <PropertyGroup Label="Restore">
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
-    
+    <RestoreLockedMode>true</RestoreLockedMode>
   </PropertyGroup>
 </Project>

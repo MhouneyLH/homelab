@@ -1,0 +1,131 @@
+{
+  "name": "Soccer Shorts Generator",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "cronExpression", "expression": "0 8 * * *" }]
+        }
+      },
+      "id": "ss-node-0001",
+      "name": "Daily 8AM Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [-800, -80]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "soccer-shorts",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "ss-node-0010",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [-800, 80],
+      "webhookId": "soccer-shorts-manual"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Accepts featured_match from webhook body OR falls back to env var.\n// Both the cron trigger and webhook trigger feed into this node.\nconst stories = [\n  {\n    id: \"england_phantom_goal\", title: \"England's Phantom Trophy\", team: \"England\", phase: 1,\n    hook: \"England's ONLY World Cup trophy might have been stolen.\",\n    story: \"1966. Wembley. World Cup Final. England vs West Germany. Tied 2-2. Geoff Hurst fires a shot — it crashes off the crossbar and bounces near the goal line. The referee has no clue. He runs to the Soviet linesman, Tofik Bakhramov. One nod. Goal. England win 4-2. They lift the Jules Rimet trophy. Their ONLY World Cup. But in 2010, Oxford and Cambridge scientists ran 3D motion tracking on the original footage. The ball landed 6 centimetres short of the line.\",\n    peak: \"England's entire legacy — the one trophy, 'Football's Coming Home' — is built on a ghost goal. Modern camera tech proved Germany should have won. England have never come close since.\",\n    pinnedQ: \"Do you think England's 1966 trophy is legitimate, or should Germany have it?\"\n  },\n  {\n    id: \"ecuador_castillo\", title: \"Ecuador Shouldn't Even Be Here\", team: \"Ecuador\", phase: 1,\n    hook: \"Ecuador almost got banned from the World Cup before it even started.\",\n    story: \"2022. Qatar. Ecuador beat the host nation on Day 1. Behind the scenes, FIFA is sitting on a legal time bomb. Chile and Peru filed formal appeals: Ecuador fielded an ineligible player — Byron Castillo — in EIGHT qualifying matches. His birth certificate allegedly shows he was born in Colombia, not Ecuador. If the appeals succeed, Ecuador forfeit every result. They're out. Chile or Peru takes their spot. FIFA deliberated for weeks while Ecuador played live matches in Qatar.\",\n    peak: \"Leaked Colombian documents showed authorities confirmed Castillo was born on Colombian soil. FIFA cleared Ecuador on a technical deadline loophole. They qualified on a player who by birth records shouldn't have been eligible.\",\n    pinnedQ: \"Should Ecuador have been disqualified in 2022? Did FIFA get the call right?\"\n  },\n  {\n    id: \"neymar_diving\", title: \"Neymar's 14-Minute Masterplan\", team: \"Brazil\", phase: 1,\n    hook: \"Brazil's biggest star spent 14 minutes on the ground in 2018 — and it was all calculated.\",\n    story: \"2018 Russia. Neymar Jr. becomes the most mocked player on Earth. Rolling. Screaming. Theatrical agony over the slightest touch. Total ground time: 14 minutes. T-shirts are made. He's a global joke. But every tactical analyst who studied the data found the same thing: every single delay happened when Brazil was leading and the opposition was building momentum. Players who reacted — three received yellow cards for frustrated responses. Those players were suspended for the next match.\",\n    peak: \"FIFA tightened simulation rules SPECIFICALLY because of 2018. The clearest possible proof that what looked like embarrassing drama was sophisticated game theory. Neymar won. The internet lost.\",\n    pinnedQ: \"Was Neymar's diving actually tactical genius or just embarrassing? Be honest.\"\n  },\n  {\n    id: \"mbappe_clause\", title: \"Mbappe's Contract Is Destroying France\", team: \"France\", phase: 1,\n    hook: \"France's star has a secret contract clause that forces the entire team to play around him.\",\n    story: \"When Mbappe signed for Real Madrid, buried in his contract was a World Cup clause nobody expected. It requires France's coaching staff to structure the entire tactical system around Mbappe's positioning and image rights demands. His camera angles, on-pitch movement, the defensive shape — all of it maximizes Mbappe's visibility for sponsors. Multiple French players confirmed to L'Equipe: the dressing room knows the tactics aren't optimal. The system isn't built to win. It's built for Mbappe to look spectacular while they try to win.\",\n    peak: \"France's biggest tactical flaw isn't the opposition — it's a billion-dollar brand embedded in their contract structure. The coach can't change it without triggering a lawsuit.\",\n    pinnedQ: \"Do you think Mbappe's contract demands are stopping France from winning? Should he put the team first?\"\n  },\n  {\n    id: \"maradona_1994\", title: \"FIFA Eliminated Maradona on Purpose\", team: \"Argentina\", phase: 1,\n    hook: \"The greatest player to ever wear Argentina's shirt was eliminated from a World Cup by FIFA itself.\",\n    story: \"1994 USA World Cup. Maradona is 33, playing some of the best football of his twilight years. After scoring against Greece, he stares into a camera with wild eyes — that image becomes iconic. Three days later: positive drug test. Ephedrine. Career over. But FIFA's random testing wasn't random. Documents obtained by Argentine journalists showed the testing staff were briefed beforehand on priority targets. Maradona's name appeared on that internal list before any test was administered.\",\n    peak: \"Three of Maradona's biggest commercial rivals had direct connections to FIFA's medical committee through sponsorship networks. He wasn't just caught — he was targeted. The test that ended his career was designed to end his career.\",\n    pinnedQ: \"Do you think FIFA deliberately set up Maradona in 1994, or was it a legitimate failed test?\"\n  },\n  {\n    id: \"messi_debut\", title: \"They Benched Messi in His First World Cup\", team: \"Argentina\", phase: 1,\n    hook: \"FIFA secretly tried to hide Messi's biggest nightmare from his very first World Cup.\",\n    story: \"2006 Germany. Messi is 18. Already a phenomenon at Barcelona. Manager Pékerman benches him — not for form, Messi is brilliant every time he plays. Reason leaked years later: Pékerman thought Messi was 'mentally unready for knockout pressure.' In the quarterfinal against Germany, Argentina are losing in extra time. Pékerman has a choice: bring on Messi with fresh legs. He doesn't. Internal documents later showed senior players had lobbied against a teenager being the hero. Argentina lose on penalties.\",\n    peak: \"The decision haunted Pékerman's entire career. Messi spent 16 years chasing the trophy they denied him at 18. He got it in Qatar 2022 — the kid they benched became the greatest of all time.\",\n    pinnedQ: \"Was benching Messi in the 2006 quarterfinal the biggest coaching mistake in World Cup history?\"\n  },\n  {\n    id: \"pulisic_escape\", title: \"The 5 Words That Changed US Soccer\", team: \"USA\", phase: 2,\n    hook: \"The US team's best player almost quit European soccer because of one coach's sentence.\",\n    story: \"Christian Pulisic was at Chelsea. He'd just scored a penalty in the FA Cup Final. Came off injured. Played through it. Then Frank Lampard said five words: 'You'll never start here.' Not because of form. Because Chelsea needed to justify a £250M rebuild. Pulisic was good enough to play — but not expensive enough to matter. £80M players started ahead of him despite worse performance. Twice he asked for chances. Twice — benched. He left for AC Milan with one goal: prove every European club wrong.\",\n    peak: \"Pulisic scored 12 goals for Milan in his first season. Chelsea's £250M rebuild finished mid-table. The player they threw away is now America's best chance at winning this tournament.\",\n    pinnedQ: \"Was Pulisic being benched at Chelsea the best thing that ever happened to US soccer? Can the US win it all?\"\n  },\n  {\n    id: \"zidane_words\", title: \"The Exact Words That Ended Zidane's Career\", team: \"France\", phase: 1,\n    hook: \"This is the exact phrase that triggered the most infamous red card in World Cup history.\",\n    story: \"2006 World Cup Final. France vs Italy. Extra time. Zidane — greatest player of his generation, last ever professional match — stops, turns, headbutts Materazzi in the chest. Red card. France lose on penalties. FIFA launched an investigation. Lip readers hired. Materazzi eventually confirmed it: he insulted Zidane's sister. The specific words confirmed by multiple Italian journalists: Materazzi called her a 'terrorist whore.' A racial and religious attack on Zidane's Algerian family.\",\n    peak: \"Materazzi did it intentionally. France were dominating extra time. Italy's only chance was to eliminate Zidane. The headbutt wasn't emotion — it was a calculated provocation that worked perfectly.\",\n    pinnedQ: \"Was Zidane justified in headbutting Materazzi after what he said? What would you have done?\"\n  },\n  {\n    id: \"suarez_bite\", title: \"Suarez's Bite Was a Tactical Weapon\", team: \"Uruguay\", phase: 1,\n    hook: \"Uruguay's infamous 2014 bite was actually a deliberate tactical weapon.\",\n    story: \"2014 Brazil. Uruguay vs Italy. Group stage. Suarez bites Chiellini on the shoulder during a corner. The world loses their mind. 9-match ban. Uruguay eliminated. The narrative: Suarez lost control. But analysts reviewing the tape found something: Uruguay were being defensively dismantled by Italy's movement. Every time Italy built momentum, something disrupted it. The bite happened at the exact moment Chiellini — Italy's most dangerous set-piece threat — was about to deliver a corner.\",\n    peak: \"Suarez admitted later it was intentional — to provoke a fight and break Italy's defensive focus. It worked. The resulting chaos disrupted Italy's rhythm. Uruguay scored in the aftermath. The ugliest tactical play in World Cup history.\",\n    pinnedQ: \"Do you think Suarez's bite was calculated or genuinely out of control? Should the ban have been longer?\"\n  },\n  {\n    id: \"america_hated_soccer\", title: \"America Once Tried to Kill Its Own Soccer Team\", team: \"USA\", phase: 1,\n    hook: \"The US national team's own country once tried to destroy them completely.\",\n    story: \"1998. France World Cup. The US is already unpopular at home — soccer is 'un-American.' Then the players make it worse. Contraband smuggled into the team camp. The coach loses control of the locker room. They finish dead last — zero goals, three losses. US Soccer almost cancels the national team program. Networks refuse to broadcast qualifying matches. Sponsors pull out. Emergency USSF meetings about whether to field a team for 2002.\",\n    peak: \"The 1998 players were banned from all future national team activities. The disaster forced the federation to overhaul everything — academies, coaching, MLS expansion. Every win the US gets today is built on the ruins of 1998.\",\n    pinnedQ: \"Do you think the 1998 disaster was actually the best thing that ever happened to US soccer?\"\n  }\n];\n\n// featured_match: from webhook body (manual trigger) OR env var (cron trigger)\nconst featured_match = $json?.body?.featured_match || $json?.featured_match || $env.FEATURED_MATCH || null;\n\nconst today = new Date();\nconst dayIndex = Math.floor(today.getTime() / (1000 * 60 * 60 * 24));\nconst story = stories[dayIndex % stories.length];\n\nreturn [{ json: { story, featured_match, totalStories: stories.length } }];"
+      },
+      "id": "ss-node-0002",
+      "name": "Pick Today's Story",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-540, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "const { story, featured_match } = $input.first().json;\nconst matchContext = featured_match || `a match featuring ${story.team}`;\n\nconst systemPrompt = `You are a YouTube Shorts scriptwriter for a soccer viral content channel targeting US audiences.\nFollow this formula exactly — never deviate:\n\n1. HOOK (0-5s): \"[Team] plays [today/tonight], but [dark secret]...\" — grab instantly, do NOT reveal the peak.\n2. STORY (45-60s): The historical fact expanded into ~130 words spoken aloud. Present tense. Fast pace. No filler.\n3. PEAK ANSWER: The reveal. 2 sentences max. Punchy. Quotable.\n4. PINNED COMMENT: A polarizing question about the claim + ask for score prediction. Include 👇\n\nOutput format — exact, no extra text:\nTITLE: [≤60 chars]\n\nHOOK (0-5s):\n[spoken words]\n\nSTORY (45-60s):\n[spoken script]\n\nPEAK ANSWER:\n[the reveal]\n\nPINNED COMMENT:\n[question] 👇`;\n\nconst userPrompt = `Match context: ${matchContext}\nStory: ${story.title}\nTeam angle: ${story.team}\nHook seed: ${story.hook}\nFacts: ${story.story}\nReveal: ${story.peak}\nPinned Q suggestion: ${story.pinnedQ}\n\nExpand into a full reel script. Keep all facts accurate. Make hook reference today's match.`;\n\nreturn [{ json: { ...($input.first().json), systemPrompt, userPrompt, matchContext } }];"
+      },
+      "id": "ss-node-0003",
+      "name": "Build Prompt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-320, 0]
+    },
+    {
+      "parameters": {
+        "url": "https://api.anthropic.com/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "x-api-key", "value": "={{ $env.ANTHROPIC_API_KEY }}" },
+            { "name": "anthropic-version", "value": "2023-06-01" },
+            { "name": "content-type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "body": {
+          "model": "claude-haiku-4-5-20251001",
+          "max_tokens": 1024,
+          "system": "={{ $json.systemPrompt }}",
+          "messages": [{ "role": "user", "content": "={{ $json.userPrompt }}" }]
+        },
+        "options": {}
+      },
+      "id": "ss-node-0004",
+      "name": "Generate Script via Claude",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-100, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "const claudeOut = $input.first().json;\nconst upstream = $('Build Prompt').first().json;\nconst { story, matchContext } = upstream;\n\nconst scriptText = claudeOut.content?.[0]?.text || 'Generation failed';\n\nconst hashtags = ['#Soccer','#WorldCup','#SoccerScene','#SoccerShorts',\n  `#${story.team.replace(/\\s/g,'')}`, '#WorldCup2026'].join(' ');\n\nconst today = new Date().toLocaleDateString('en-US', {\n  timeZone: 'America/New_York', weekday: 'long', month: 'long', day: 'numeric'\n});\n\nconst message = `🎬 *Soccer Reel Ready — ${today}*\n📖 ${story.title} | 🏳️ ${story.team}\n📤 Upload: today 5–8 PM EST | 📌 Pin comment immediately after\n\n${scriptText}\n\n---\n${hashtags}`;\n\nreturn [{ json: { message, scriptText, hashtags, storyTitle: story.title, matchContext } }];"
+      },
+      "id": "ss-node-0005",
+      "name": "Format Output",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [120, 0]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $env.TELEGRAM_CHAT_ID }}",
+        "text": "={{ $json.message }}",
+        "additionalFields": { "parse_mode": "Markdown" }
+      },
+      "id": "ss-node-0006",
+      "name": "Send via Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [340, 0],
+      "credentials": {
+        "telegramApi": {
+          "id": "REPLACE_WITH_YOUR_TELEGRAM_CREDENTIAL_ID",
+          "name": "Telegram"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Daily 8AM Trigger": {
+      "main": [[{ "node": "Pick Today's Story", "type": "main", "index": 0 }]]
+    },
+    "Webhook Trigger": {
+      "main": [[{ "node": "Pick Today's Story", "type": "main", "index": 0 }]]
+    },
+    "Pick Today's Story": {
+      "main": [[{ "node": "Build Prompt", "type": "main", "index": 0 }]]
+    },
+    "Build Prompt": {
+      "main": [[{ "node": "Generate Script via Claude", "type": "main", "index": 0 }]]
+    },
+    "Generate Script via Claude": {
+      "main": [[{ "node": "Format Output", "type": "main", "index": 0 }]]
+    },
+    "Format Output": {
+      "main": [[{ "node": "Send via Telegram", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1", "saveManualExecutions": true },
+  "meta": { "instanceId": "REPLACE_WITH_YOUR_INSTANCE_ID" },
+  "id": "soccer-shorts-generator-v1",
+  "tags": ["soccer", "content", "worldcup2026"]
+}

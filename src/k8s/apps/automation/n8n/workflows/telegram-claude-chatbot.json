@@ -1,0 +1,106 @@
+{
+  "name": "Telegram Claude Chatbot",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": ["message"],
+        "additionalFields": {}
+      },
+      "id": "tg-node-0001",
+      "name": "Telegram Trigger",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.1,
+      "position": [-600, 0],
+      "credentials": {
+        "telegramApi": {
+          "id": "REPLACE_WITH_YOUR_TELEGRAM_CREDENTIAL_ID",
+          "name": "Telegram"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Build conversation message for Claude.\n// Telegram message arrives at $json.message\nconst msg = $json.message;\nconst text = msg?.text || '';\nconst chatId = msg?.chat?.id?.toString();\nconst username = msg?.from?.username || msg?.from?.first_name || 'User';\n\n// Simple command routing\nif (text.startsWith('/soccer')) {\n  return [{ json: {\n    chatId,\n    username,\n    userMessage: text.replace('/soccer', '').trim() || 'Generate a soccer reel script for today',\n    systemPrompt: 'You are a YouTube Shorts scriptwriter for soccer viral content. Generate reel scripts following this formula: HOOK (0-5s referencing a current match) → STORY (45-60s historical scandal) → PEAK ANSWER (the reveal). Be concise — this is a chat response, not a full document.',\n    mode: 'soccer'\n  }}];\n}\n\n// Default: general Claude conversation\nreturn [{ json: {\n  chatId,\n  username,\n  userMessage: text,\n  systemPrompt: 'You are a helpful, knowledgeable assistant. Be direct and concise. The user is messaging via Telegram.',\n  mode: 'chat'\n}}];"
+      },
+      "id": "tg-node-0002",
+      "name": "Route Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-380, 0]
+    },
+    {
+      "parameters": {
+        "url": "https://api.anthropic.com/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "x-api-key", "value": "={{ $env.ANTHROPIC_API_KEY }}" },
+            { "name": "anthropic-version", "value": "2023-06-01" },
+            { "name": "content-type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "body": {
+          "model": "claude-haiku-4-5-20251001",
+          "max_tokens": 1024,
+          "system": "={{ $json.systemPrompt }}",
+          "messages": [{ "role": "user", "content": "={{ $json.userMessage }}" }]
+        },
+        "options": {}
+      },
+      "id": "tg-node-0003",
+      "name": "Ask Claude",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-160, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "const claudeOut = $input.first().json;\nconst upstream = $('Route Message').first().json;\n\nconst reply = claudeOut.content?.[0]?.text || 'Sorry, something went wrong.';\n\nreturn [{ json: {\n  chatId: upstream.chatId,\n  reply,\n  inputTokens: claudeOut.usage?.input_tokens || 0,\n  outputTokens: claudeOut.usage?.output_tokens || 0\n}}];"
+      },
+      "id": "tg-node-0004",
+      "name": "Extract Reply",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [60, 0]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text": "={{ $json.reply }}",
+        "additionalFields": { "parse_mode": "Markdown" }
+      },
+      "id": "tg-node-0005",
+      "name": "Reply via Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [280, 0],
+      "credentials": {
+        "telegramApi": {
+          "id": "REPLACE_WITH_YOUR_TELEGRAM_CREDENTIAL_ID",
+          "name": "Telegram"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Telegram Trigger": {
+      "main": [[{ "node": "Route Message", "type": "main", "index": 0 }]]
+    },
+    "Route Message": {
+      "main": [[{ "node": "Ask Claude", "type": "main", "index": 0 }]]
+    },
+    "Ask Claude": {
+      "main": [[{ "node": "Extract Reply", "type": "main", "index": 0 }]]
+    },
+    "Extract Reply": {
+      "main": [[{ "node": "Reply via Telegram", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" },
+  "meta": { "instanceId": "REPLACE_WITH_YOUR_INSTANCE_ID" },
+  "id": "telegram-claude-chatbot-v1",
+  "tags": ["telegram", "claude", "chatbot"]
+}

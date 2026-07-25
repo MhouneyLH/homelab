@@ -1,0 +1,145 @@
+{
+  "name": "Soccer Shorts Video Generator",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "soccer-shorts-approve",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "vid-node-0001",
+      "name": "Approval Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [-800, 0],
+      "webhookId": "soccer-shorts-approve"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Expects body: { script: \"...\", voice_id: \"...\", approved: true }\n// Telegram approval: user replies 'approve' to the script message,\n// which triggers this webhook from the chatbot workflow.\nconst body = $json.body || $json;\n\nif (!body.approved) {\n  throw new Error('Not approved — workflow halted.');\n}\n\nconst script = body.script || body.scriptText;\nif (!script) throw new Error('No script provided in body.');\n\n// Extract just the spoken parts (hook + story + peak) for TTS\n// Strip markdown headers from the script\nconst spokenText = script\n  .replace(/TITLE:.*\\n/g, '')\n  .replace(/HOOK \\(0-5s\\):\\n/g, '')\n  .replace(/STORY \\(45-60s\\):\\n/g, '')\n  .replace(/PEAK ANSWER:\\n/g, ' ...')\n  .replace(/PINNED COMMENT:\\n.*$/s, '')\n  .replace(/---.*$/s, '')\n  .trim();\n\nreturn [{ json: {\n  script,\n  spokenText,\n  voiceId: body.voice_id || $env.ELEVENLABS_VOICE_ID || 'pNInz6obpgDQGcFmaJgB',\n  title: body.title || 'Soccer Short'\n}}];"
+      },
+      "id": "vid-node-0002",
+      "name": "Validate & Extract Script",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-580, 0]
+    },
+    {
+      "parameters": {
+        "url": "=https://api.elevenlabs.io/v1/text-to-speech/{{ $json.voiceId }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "xi-api-key", "value": "={{ $env.ELEVENLABS_API_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "body": {
+          "text": "={{ $json.spokenText }}",
+          "model_id": "eleven_multilingual_v2",
+          "voice_settings": {
+            "stability": 0.5,
+            "similarity_boost": 0.75,
+            "style": 0.4,
+            "use_speaker_boost": true
+          }
+        },
+        "options": {
+          "response": { "response": { "responseFormat": "file" } }
+        }
+      },
+      "id": "vid-node-0003",
+      "name": "Generate Voiceover (ElevenLabs)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-360, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "// At this point $binary.data contains the MP3 voiceover.\n// Next step: send to video generation API (RunwayML / HeyGen / Kling).\n// This node prepares the HeyGen talking-head request.\n// Swap for RunwayML/Kling if you want cinematic clips instead of talking head.\n\nconst upstream = $('Validate & Extract Script').first().json;\n\n// HeyGen avatar video request\nconst heygenPayload = {\n  video_inputs: [{\n    character: {\n      type: 'avatar',\n      avatar_id: $env.HEYGEN_AVATAR_ID || 'josh_lite3_20230714',\n      avatar_style: 'normal'\n    },\n    voice: {\n      type: 'audio',\n      // We'll use the ElevenLabs audio we just generated\n      // HeyGen supports uploading audio for lip sync\n      audio_url: 'POPULATED_IN_NEXT_STEP'\n    },\n    background: {\n      type: 'color',\n      value: '#000000'\n    }\n  }],\n  dimension: { width: 1080, height: 1920 },\n  caption: false\n};\n\nreturn [{ json: { ...upstream, heygenPayload, note: 'Upload ElevenLabs audio to HeyGen then poll for video completion.' } }];"
+      },
+      "id": "vid-node-0004",
+      "name": "Prepare Video Request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-140, 0]
+    },
+    {
+      "parameters": {
+        "url": "https://api.heygen.com/v2/video/generate",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "X-Api-Key", "value": "={{ $env.HEYGEN_API_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "body": "={{ JSON.stringify($json.heygenPayload) }}",
+        "options": {}
+      },
+      "id": "vid-node-0005",
+      "name": "Generate Video (HeyGen)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [80, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "// HeyGen returns a video_id immediately; video renders async (1-5 min).\n// Poll /v1/video.status until status=completed, then get download_url.\nconst heygenRes = $input.first().json;\nconst upstream = $('Validate & Extract Script').first().json;\n\nreturn [{ json: {\n  videoId: heygenRes.data?.video_id,\n  title: upstream.title,\n  script: upstream.script,\n  status: 'rendering',\n  note: 'Poll GET https://api.heygen.com/v1/video.status.get?video_id={videoId} until status=completed'\n}}];"
+      },
+      "id": "vid-node-0006",
+      "name": "Store Video ID",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [300, 0]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $env.TELEGRAM_CHAT_ID }}",
+        "text": "=🎬 *Video rendering started!*\n\n📹 HeyGen Video ID: `{{ $json.videoId }}`\n📖 {{ $json.title }}\n\nPolling for completion... you'll get the download link when ready.\n\n_Manual check: GET https://api.heygen.com/v1/video.status.get?video_id={{ $json.videoId }}_",
+        "additionalFields": { "parse_mode": "Markdown" }
+      },
+      "id": "vid-node-0007",
+      "name": "Notify Rendering Started",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [520, 0],
+      "credentials": {
+        "telegramApi": {
+          "id": "REPLACE_WITH_YOUR_TELEGRAM_CREDENTIAL_ID",
+          "name": "Telegram"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Approval Webhook": {
+      "main": [[{ "node": "Validate & Extract Script", "type": "main", "index": 0 }]]
+    },
+    "Validate & Extract Script": {
+      "main": [[{ "node": "Generate Voiceover (ElevenLabs)", "type": "main", "index": 0 }]]
+    },
+    "Generate Voiceover (ElevenLabs)": {
+      "main": [[{ "node": "Prepare Video Request", "type": "main", "index": 0 }]]
+    },
+    "Prepare Video Request": {
+      "main": [[{ "node": "Generate Video (HeyGen)", "type": "main", "index": 0 }]]
+    },
+    "Generate Video (HeyGen)": {
+      "main": [[{ "node": "Store Video ID", "type": "main", "index": 0 }]]
+    },
+    "Store Video ID": {
+      "main": [[{ "node": "Notify Rendering Started", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" },
+  "meta": { "instanceId": "REPLACE_WITH_YOUR_INSTANCE_ID" },
+  "id": "soccer-shorts-video-v1",
+  "tags": ["soccer", "video", "elevenlabs", "heygen", "worldcup2026"]
+}

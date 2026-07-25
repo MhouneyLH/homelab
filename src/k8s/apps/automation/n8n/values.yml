@@ -6,17 +6,25 @@ service:
 nodeSelector:
   kubernetes.io/hostname: hl-worker-01
 
+# Secret env vars injected from n8n-owner secret (apply secret.yml first)
+extraEnvVarsSecret: n8n-owner
+
 extraEnvVars:
   N8N_SECURE_COOKIE: "false"
 
   # Expose the REST API so workflows can be imported via curl/CI
   N8N_PUBLIC_API_DISABLED: "false"
 
-  # Allow workflows to use the n8n webhook base URL correctly
   # Set this to however n8n is reachable externally (Traefik hostname or NodePort URL)
   # WEBHOOK_URL: "https://n8n.your-domain.com/"
 
   N8N_SOURCE_CONTROL_DEFAULT_CONNECTED_REPOSITORY: "git@github.com:MhouneyLH/homelab.git"
+
+  # Non-sensitive workflow defaults (secrets come from extraEnvVarsSecret above)
+  ELEVENLABS_VOICE_ID: "pNInz6obpgDQGcFmaJgB"
+  HEYGEN_AVATAR_ID: "josh_lite3_20230714"
+  # Override to inject a specific match name into today's reel hook; leave blank for default
+  FEATURED_MATCH: ""
 
   # Prometheus metrics endpoint at /metrics
   N8N_METRICS: "true"
