@@ -22,16 +22,14 @@ internal static class MqttMessageParser {
         string plantId = parts[PlantIdSegment];
         string sensorType = parts[SensorTypeSegment];
 
+        if (sensorType != SoilMoistureSensorType)
+            return new MqttMessageResult.UnknownTopic(topic);
+
         if (!double.TryParse(payload, NumberStyles.Float, CultureInfo.InvariantCulture, out double value))
             return new MqttMessageResult.InvalidPayload(topic, payload);
 
-        DateTimeOffset timestamp = DateTimeOffset.UtcNow;
+        DateTimeOffset receivedAt = DateTimeOffset.UtcNow;
 
-        SensorReading reading = sensorType switch {
-            SoilMoistureSensorType => new SoilMoistureReading(plantId, timestamp, ValueInPercent: value),
-            _ => new GenericSensorReading(plantId, sensorType, timestamp, value),
-        };
-
-        return new MqttMessageResult.Valid(reading);
+        return new MqttMessageResult.Valid(new SoilMoistureReading(plantId, receivedAt, ValueInPercent: value));
     }
 }

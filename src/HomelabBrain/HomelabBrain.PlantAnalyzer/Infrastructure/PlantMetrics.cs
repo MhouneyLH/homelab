@@ -10,25 +10,17 @@ internal sealed class PlantMetrics : IDisposable {
     internal const string MeterName = "HomelabBrain.PlantAnalyzer";
 
     private readonly Meter _meter;
-    private readonly Histogram<double> _soilMoistureReading;
-    private readonly Histogram<double> _genericSensorReading;
+    private readonly Histogram<double> _soilMoisture;
     private readonly Counter<long> _messagesReceived;
     private readonly Counter<long> _invalidMessages;
 
     public PlantMetrics(IMeterFactory meterFactory) {
         _meter = meterFactory.Create(MeterName);
 
-        _soilMoistureReading = _meter.CreateHistogram<double>(
-            "plants.soil_moisture.reading",
+        _soilMoisture = _meter.CreateHistogram<double>(
+            "plants.soil_moisture",
             unit: "%",
             description: "Soil moisture sensor reading");
-
-        // Sensor types without a dedicated SensorReading subtype (and
-        // dedicated instrument) yet land here instead of being dropped.
-        _genericSensorReading = _meter.CreateHistogram<double>(
-            "plants.sensor.reading",
-            unit: "1",
-            description: "Plant sensor reading for sensor types without a dedicated metric yet");
 
         _messagesReceived = _meter.CreateCounter<long>(
             "plants.mqtt.messages.received",
@@ -43,8 +35,7 @@ internal sealed class PlantMetrics : IDisposable {
 
     public void RecordSensorReading(SensorReading reading) {
         (Histogram<double> histogram, double value) = reading switch {
-            SoilMoistureReading soilMoisture => (_soilMoistureReading, soilMoisture.ValueInPercent),
-            GenericSensorReading generic => (_genericSensorReading, generic.Value),
+            SoilMoistureReading soilMoisture => (_soilMoisture, soilMoisture.ValueInPercent),
             _ => throw new NotSupportedException($"Unsupported sensor reading type '{reading.GetType()}'."),
         };
 
