@@ -62,7 +62,7 @@ internal sealed partial class MqttConsumerService : BackgroundService {
         switch (MqttMessageParser.Parse(topic, payload)) {
             case MqttMessageResult.Valid valid:
                 _metrics.RecordSensorReading(valid.Reading);
-                LogSensorReading(valid.Reading.PlantId, valid.Reading.SensorType, valid.Reading.Value);
+                LogSensorReading(valid.Reading);
                 break;
 
             case MqttMessageResult.InvalidPayload invalid:
@@ -85,8 +85,8 @@ internal sealed partial class MqttConsumerService : BackgroundService {
     [LoggerMessage(Level = LogLevel.Information, Message = "MQTT consumer started, subscribed to plants/# on {Host}:{Port}")]
     private partial void LogConsumerStarted(string host, int port);
 
-    [LoggerMessage(Level = LogLevel.Debug, Message = "Sensor reading: plant={PlantId} sensor={SensorType} value={Value}")]
-    private partial void LogSensorReading(string plantId, string sensorType, double value);
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Sensor reading: {Reading}")]
+    private partial void LogSensorReading(SensorReading reading);
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Invalid payload on topic {Topic}: {Payload}")]
     private partial void LogInvalidPayload(string topic, string payload);
