@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+    <ProjectReference Include="..\HomelabBrain.ServiceDefaults\HomelabBrain.ServiceDefaults.csproj" />
+    <ProjectReference Include="..\HomelabBrain.PlantAnalyzer\HomelabBrain.PlantAnalyzer.csproj" />
+  </ItemGroup>
+
+</Project>
