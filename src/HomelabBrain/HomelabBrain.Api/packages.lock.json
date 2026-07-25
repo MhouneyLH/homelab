@@ -125,7 +125,8 @@
         "type": "Project",
         "dependencies": {
           "MQTTnet": "[4.3.4.1084, )",
-          "MQTTnet.Extensions.ManagedClient": "[4.3.4.1084, )"
+          "MQTTnet.Extensions.ManagedClient": "[4.3.4.1084, )",
+          "OpenTelemetry.Extensions.Hosting": "[1.17.0, )"
         }
       },
       "homelabbrain.servicedefaults": {

@@ -79,14 +79,21 @@ Run via Aspire AppHost:
 
 ```
 dotnet restore  # generates packages.lock.json first time
-dotnet run --project HomelabBrain.AppHost
+dotnet run --project HomelabBrain.AppHost --launch-profile https
 ```
+
+Or `--launch-profile http` for plain HTTP dashboard (needs `ASPIRE_ALLOW_UNSECURED_TRANSPORT=true`,
+already set in that profile in `Properties/launchSettings.json`).
+Both profiles bring up the Aspire dashboard with live metrics/traces for the API and Mosquitto.
 
 Aspire starts: Mosquitto (1883/9001), OTel collector (4317/4318), API.
 OTel collector config: `HomelabBrain.AppHost/otel-collector-config.yaml` (debug exporter - swap for real endpoint in prod).
 
 Aspire injects Mosquitto endpoint as `services__mosquitto__mqtt__0=tcp://host:port`.
 `PlantAnalyzerModule.AddPlantAnalyzer` reads this and overrides `Mqtt:BrokerHost`/`Mqtt:BrokerPort`.
+`HomelabBrain.Api/appsettings.Development.json` sets `Mqtt:BrokerHost=localhost`/`BrokerPort=1883` as
+the fallback default (base `appsettings.json` ships `BrokerHost: ""`, which fails `[Required]` validation
+on its own - the Aspire override normally replaces it, the Development default covers the case it doesn't).
 
 ## Production Config
 
@@ -104,6 +111,12 @@ Enforced via `.editorconfig` at `src/HomelabBrain/.editorconfig`.
 Pre-commit hook runs `dotnet format --verify-no-changes` - format before committing.
 
 To format: `dotnet format src/HomelabBrain/HomelabBrain.slnx`
+
+`TreatWarningsAsErrors` + `AnalysisMode=AllEnabledByDefault` + `EnforceCodeStyleInBuild` (all in
+`Directory.Build.props`) mean every analyzer/style diagnostic is a build error - `dotnet build`
+is the real formatting/lint gate here, not just `dotnet format`. New code must build clean under
+these settings; when a rule doesn't fit (e.g. `IDE0058` on fluent builder chains), tune the rule
+in `.editorconfig` project-wide rather than suppressing per line, and say why in the PR/commit.
 
 ## Git Hooks (Husky.Net)
 

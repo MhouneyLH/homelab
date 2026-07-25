@@ -1,4 +1,5 @@
 using HomelabBrain.PlantAnalyzer;
+using HomelabBrain.ServiceDefaults;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,8 +11,7 @@ var app = builder.Build();
 
 app.MapDefaultEndpoints();
 
-if (app.Environment.IsDevelopment())
-{
+if (app.Environment.IsDevelopment()) {
     app.MapOpenApi();
 }
 

@@ -1,16 +1,17 @@
 using System.ComponentModel.DataAnnotations;
+using System.Diagnostics.CodeAnalysis;
 
 namespace HomelabBrain.PlantAnalyzer.Infrastructure;
 
-internal sealed class MqttOptions
-{
+[SuppressMessage("Performance", "CA1812", Justification = "Instantiated via DI (AddOptions)")]
+internal sealed class MqttOptions {
     public const string SectionName = "Mqtt";
 
     [Required]
-    public string BrokerHost { get; init; } = default!;
+    public string BrokerHost { get; set; } = default!;
 
     [Range(1, 65535)]
-    public int BrokerPort { get; init; } = 1883;
+    public int BrokerPort { get; set; } = 1883;
 
-    public string ClientId { get; init; } = "homelab-brain-plant-analyzer";
+    public string ClientId { get; set; } = "homelab-brain-plant-analyzer";
 }

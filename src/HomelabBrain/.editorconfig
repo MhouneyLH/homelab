@@ -80,6 +80,7 @@ csharp_style_prefer_readonly_struct = true:suggestion
 csharp_style_prefer_readonly_struct_member = true:suggestion
 
 #### Code blocks ####
+csharp_style_unused_value_expression_statement_preference = discard_variable:none
 csharp_prefer_braces = when_multiline:warning
 csharp_prefer_simple_using_statement = true:suggestion
 csharp_style_prefer_method_group_conversion = true:suggestion

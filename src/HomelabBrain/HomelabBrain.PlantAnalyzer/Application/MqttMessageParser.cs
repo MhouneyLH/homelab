@@ -3,11 +3,9 @@ using HomelabBrain.PlantAnalyzer.Domain;
 
 namespace HomelabBrain.PlantAnalyzer.Application;
 
-internal static class MqttMessageParser
-{
+internal static class MqttMessageParser {
     // Expected topic format: plants/{plantId}/{sensorType}
-    public static MqttMessageResult Parse(string topic, string payload)
-    {
+    public static MqttMessageResult Parse(string topic, string payload) {
         var parts = topic.Split('/');
 
         if (parts.Length != 3 || parts[0] != "plants")

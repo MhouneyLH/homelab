@@ -1,10 +1,12 @@
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Metrics;
 using HomelabBrain.PlantAnalyzer.Domain;
 
 namespace HomelabBrain.PlantAnalyzer.Infrastructure;
 
-internal sealed class PlantMetrics : IDisposable
-{
+[SuppressMessage("Performance", "CA1812", Justification = "Instantiated via DI (AddSingleton)")]
+internal sealed class PlantMetrics : IDisposable {
     internal const string MeterName = "HomelabBrain.PlantAnalyzer";
 
     private readonly Meter _meter;
@@ -12,8 +14,7 @@ internal sealed class PlantMetrics : IDisposable
     private readonly Counter<long> _messagesReceived;
     private readonly Counter<long> _invalidMessages;
 
-    public PlantMetrics(IMeterFactory meterFactory)
-    {
+    public PlantMetrics(IMeterFactory meterFactory) {
         _meter = meterFactory.Create(MeterName);
 
         _sensorReadings = _meter.CreateHistogram<double>(
