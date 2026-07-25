@@ -127,9 +127,15 @@ AppHost overrides TFM to net10.0 (Aspire 13.0 SDK constraint).
 
 ## Lock Files
 
-`RestorePackagesWithLockFile=true` set in `Directory.Build.props` - each project generates `packages.lock.json`.
-Commit lock files to ensure reproducible builds.
-In CI, add `--property:RestoreLockedMode=true` to `dotnet restore` to fail on lock file drift.
+`RestorePackagesWithLockFile=true` + `RestoreLockedMode=true` both set in `Directory.Build.props`.
+Lock files are always enforced - restore fails if `packages.lock.json` drifts from project deps.
+Lock files must be committed.
+
+When adding/updating packages, regenerate lock files first:
+```
+dotnet restore --property:RestoreLockedMode=false
+```
+Then commit the updated `packages.lock.json` files alongside the package change.
 
 ## Adding a New Module
 
