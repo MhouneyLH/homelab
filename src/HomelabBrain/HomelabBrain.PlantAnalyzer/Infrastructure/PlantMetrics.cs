@@ -44,8 +44,8 @@ internal sealed class PlantMetrics : IDisposable {
 
     public void IncrementReceived() => _messagesReceived.Add(1);
 
-    public void IncrementInvalid(string reason) =>
-        _invalidMessages.Add(1, new TagList { { "reason", reason } });
+    public void IncrementInvalid(string errorType) =>
+        _invalidMessages.Add(1, new TagList { { "error.type", errorType } });
 
     public void Dispose() => _meter.Dispose();
 }
