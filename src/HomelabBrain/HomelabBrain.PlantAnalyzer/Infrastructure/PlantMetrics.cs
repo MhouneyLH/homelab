@@ -10,14 +10,17 @@ internal sealed class PlantMetrics : IDisposable {
     internal const string MeterName = "HomelabBrain.PlantAnalyzer";
 
     private readonly Meter _meter;
-    private readonly Histogram<double> _soilMoisture;
+    private readonly Gauge<double> _soilMoisture;
     private readonly Counter<long> _messagesReceived;
     private readonly Counter<long> _invalidMessages;
 
     public PlantMetrics(IMeterFactory meterFactory) {
         _meter = meterFactory.Create(MeterName);
 
-        _soilMoisture = _meter.CreateHistogram<double>(
+        // Gauge, not Histogram: this is the current value of a sensor, not a
+        // distribution to bucket - a Histogram would report an approximated
+        // bucket boundary instead of the exact recorded value.
+        _soilMoisture = _meter.CreateGauge<double>(
             "plants.soil_moisture",
             unit: "%",
             description: "Soil moisture sensor reading");
@@ -34,12 +37,12 @@ internal sealed class PlantMetrics : IDisposable {
     }
 
     public void RecordSensorReading(SensorReading reading) {
-        (Histogram<double> histogram, double value) = reading switch {
+        (Gauge<double> gauge, double value) = reading switch {
             SoilMoistureReading soilMoisture => (_soilMoisture, soilMoisture.ValueInPercent),
             _ => throw new NotSupportedException($"Unsupported sensor reading type '{reading.GetType()}'."),
         };
 
-        histogram.Record(
+        gauge.Record(
             value,
             new TagList {
                 { "plant.id", reading.PlantId },
