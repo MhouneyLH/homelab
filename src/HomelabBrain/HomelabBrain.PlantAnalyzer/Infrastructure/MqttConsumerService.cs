@@ -31,12 +31,12 @@ internal sealed partial class MqttConsumerService : BackgroundService {
     protected override async Task ExecuteAsync(CancellationToken ct) {
         _client.ApplicationMessageReceivedAsync += OnMessageReceived;
 
-        var clientOptions = new MqttClientOptionsBuilder()
+        MqttClientOptions clientOptions = new MqttClientOptionsBuilder()
             .WithClientId(_options.ClientId)
             .WithTcpServer(_options.BrokerHost, _options.BrokerPort)
             .Build();
 
-        var managedOptions = new ManagedMqttClientOptionsBuilder()
+        ManagedMqttClientOptions managedOptions = new ManagedMqttClientOptionsBuilder()
             .WithAutoReconnectDelay(TimeSpan.FromSeconds(5))
             .WithClientOptions(clientOptions)
             .Build();
@@ -54,8 +54,8 @@ internal sealed partial class MqttConsumerService : BackgroundService {
     }
 
     private Task OnMessageReceived(MqttApplicationMessageReceivedEventArgs e) {
-        var topic = e.ApplicationMessage.Topic;
-        var payload = e.ApplicationMessage.ConvertPayloadToString();
+        string topic = e.ApplicationMessage.Topic;
+        string payload = e.ApplicationMessage.ConvertPayloadToString();
 
         _metrics.IncrementReceived();
 
