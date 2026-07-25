@@ -1,10 +1,21 @@
 <Project>
-  <PropertyGroup>
+  <PropertyGroup Label="Target">
     <TargetFramework>net11.0</TargetFramework>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Language">
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Quality">
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <AnalysisMode>AllEnabledByDefault</AnalysisMode>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Restore">
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    
   </PropertyGroup>
 </Project>

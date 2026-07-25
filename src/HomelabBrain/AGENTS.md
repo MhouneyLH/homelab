@@ -1,5 +1,7 @@
 # HomelabBrain - Agent Context
 
+**Meta rule:** Always update this file when you learn something important for future sessions.
+
 ## Architecture
 
 Modulith monolith with vertical slices.
@@ -18,10 +20,7 @@ HomelabBrain.AppHost          - Aspire orchestration (local dev only)
 Every module exposes exactly two public methods on a `{Name}Module` static class:
 
 ```csharp
-// registration
 builder.AddPlantAnalyzer(this IHostApplicationBuilder builder)
-
-// endpoint mapping
 routes.MapPlantAnalyzer(this IEndpointRouteBuilder routes)
 ```
 
@@ -41,8 +40,6 @@ HomelabBrain.{Module}/
 ## Union Types (Discriminated Unions)
 
 Use sealed record hierarchies for all result/state types.
-Abstract base = the union type.
-Nested sealed records = cases.
 
 ```csharp
 internal abstract record MqttMessageResult
@@ -81,11 +78,12 @@ Each module self-registers its meter in `AddX()` via `AddOpenTelemetry().WithMet
 Run via Aspire AppHost:
 
 ```
+dotnet restore  # generates packages.lock.json first time
 dotnet run --project HomelabBrain.AppHost
 ```
 
 Aspire starts: Mosquitto (1883/9001), OTel collector (4317/4318), API.
-OTel collector config: `HomelabBrain.AppHost/otel-collector-config.yaml` (debug exporter by default - swap for real exporter targeting homelab collector).
+OTel collector config: `HomelabBrain.AppHost/otel-collector-config.yaml` (debug exporter - swap for real endpoint in prod).
 
 Aspire injects Mosquitto endpoint as `services__mosquitto__mqtt__0=tcp://host:port`.
 `PlantAnalyzerModule.AddPlantAnalyzer` reads this and overrides `Mqtt:BrokerHost`/`Mqtt:BrokerPort`.
@@ -99,6 +97,40 @@ Mqtt__BrokerPort = 1883
 OTEL_EXPORTER_OTLP_ENDPOINT = <homelab otel collector grpc endpoint>
 ```
 
+## Code Style
+
+Brace style: K&R (opening brace on same line as function head).
+Enforced via `.editorconfig` at `src/HomelabBrain/.editorconfig`.
+Pre-commit hook runs `dotnet format --verify-no-changes` - format before committing.
+
+To format: `dotnet format src/HomelabBrain/HomelabBrain.slnx`
+
+## Git Hooks (Husky.Net)
+
+Tool: Husky.Net (`.config/dotnet-tools.json` at repo root).
+Hook config: `.husky/task-runner.json`
+Pre-commit: runs `dotnet format --verify-no-changes` on the solution.
+
+Initial setup after cloning:
+```
+dotnet tool restore
+dotnet husky install
+```
+
+## Package Management
+
+All versions in `Directory.Packages.props` (central package management).
+`CentralPackageTransitivePinningEnabled=true` - transitive deps pinned in `Directory.Packages.props`.
+After adding a new package, run `dotnet restore` and inspect `packages.lock.json` to discover transitive deps worth pinning.
+All build settings in `Directory.Build.props` (TFM: net11.0).
+AppHost overrides TFM to net10.0 (Aspire 13.0 SDK constraint).
+
+## Lock Files
+
+`RestorePackagesWithLockFile=true` set in `Directory.Build.props` - each project generates `packages.lock.json`.
+Commit lock files to ensure reproducible builds.
+In CI, add `--property:RestoreLockedMode=true` to `dotnet restore` to fail on lock file drift.
+
 ## Adding a New Module
 
 1. Create `HomelabBrain.{Name}/` project (mirror PlantAnalyzer structure)
@@ -106,9 +138,4 @@ OTEL_EXPORTER_OTLP_ENDPOINT = <homelab otel collector grpc endpoint>
 3. Add `ProjectReference` in `HomelabBrain.Api/HomelabBrain.Api.csproj`
 4. Call `builder.AddName()` and `app.MapName()` in `HomelabBrain.Api/Program.cs`
 5. Register meter in `AddName()` via `AddOpenTelemetry().WithMetrics(m => m.AddMeter(...))`
-
-## Package Management
-
-All versions in `Directory.Packages.props` (central package management).
-All build settings in `Directory.Build.props` (TFM: net11.0).
-AppHost overrides TFM to net10.0 (Aspire 13.0 SDK constraint).
+6. Add new package deps to `Directory.Packages.props` with proper `Label` on `ItemGroup`
