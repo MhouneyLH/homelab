@@ -2,11 +2,11 @@ terraform {
   required_providers {
     kubernetes = {
       source  = "hashicorp/kubernetes"
-      version = "~> 2.35"
+      version = "2.38.0"
     }
     helm = {
       source  = "hashicorp/helm"
-      version = "~> 2.17"
+      version = "2.17.0"
     }
   }
 }
@@ -34,7 +34,7 @@ resource "helm_release" "argocd" {
   repository = "https://argoproj.github.io/argo-helm"
   chart      = "argo-cd"
   namespace  = kubernetes_namespace.argocd.metadata[0].name
-  version    = "9.4.3"
+  version    = "9.7.1"
 
   values = [
     file("${path.module}/argocd-values.yaml")
