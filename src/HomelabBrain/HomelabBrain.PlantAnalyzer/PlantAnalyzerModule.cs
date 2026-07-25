@@ -15,8 +15,10 @@ public static class PlantAnalyzerModule {
         builder.Services.AddOptions<MqttOptions>()
             .BindConfiguration(MqttOptions.SectionName)
             .Configure<IConfiguration>((opts, cfg) => {
-                // Aspire injects container endpoint as services__mosquitto__mqtt__0=tcp://host:port
-                string? aspireEndpoint = cfg["services__mosquitto__mqtt__0"];
+                // Env var services__mosquitto__mqtt__0 is normalized by the
+                // configuration provider to "services:mosquitto:mqtt:0" (double
+                // underscore -> colon), so look it up with colons.
+                string? aspireEndpoint = cfg["services:mosquitto:mqtt:0"];
                 if (aspireEndpoint is not null
                     && Uri.TryCreate(aspireEndpoint, UriKind.Absolute, out Uri? uri)) {
                     opts.BrokerHost = uri.Host;
