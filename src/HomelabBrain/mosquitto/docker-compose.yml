@@ -1,6 +1,6 @@
 services:
   mosquitto:
-    image: eclipse-mosquitto:latest
+    image: eclipse-mosquitto:2.1.2
     restart: unless-stopped
     ports:
       - "1883:1883"

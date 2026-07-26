@@ -20,5 +20,15 @@
       "matchUpdateTypes": ["major"],
       "groupName": "all major dependencies"
     }
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/^src/HomelabBrain/HomelabBrain\\.AppHost/Program\\.cs$/"],
+      "matchStrings": [
+        "AddContainer\\(\"(?<depName>[^\"]+)\",\\s*\"(?<packageName>[^\"]+)\",\\s*\"(?<currentValue>[^\"]+)\"\\)"
+      ],
+      "datasourceTemplate": "docker"
+    }
   ]
 }
