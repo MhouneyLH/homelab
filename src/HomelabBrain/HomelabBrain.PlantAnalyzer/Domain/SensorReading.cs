@@ -5,4 +5,5 @@ internal abstract record SensorReading(string PlantId, string SensorType, DateTi
 internal sealed record SoilMoistureReading(
     string PlantId,
     DateTimeOffset ReceivedAt,
-    double ValueInPercent) : SensorReading(PlantId, "soil-moisture", ReceivedAt);
+    double ValueInPercent,
+    DateTimeOffset MeasuredAt) : SensorReading(PlantId, "soil-moisture", ReceivedAt);

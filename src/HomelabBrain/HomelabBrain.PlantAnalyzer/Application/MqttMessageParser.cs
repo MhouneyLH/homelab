@@ -1,4 +1,5 @@
-using System.Globalization;
+using System.Text.Json;
+using HomelabBrain.PlantAnalyzer.Contracts;
 using HomelabBrain.PlantAnalyzer.Domain;
 
 namespace HomelabBrain.PlantAnalyzer.Application;
@@ -25,11 +26,19 @@ internal static class MqttMessageParser {
         if (sensorType != SoilMoistureSensorType)
             return new MqttMessageResult.UnknownTopic(topic);
 
-        if (!double.TryParse(payload, NumberStyles.Float, CultureInfo.InvariantCulture, out double value))
+        SoilMoistureReadingDto? dto;
+        try {
+            dto = JsonSerializer.Deserialize<SoilMoistureReadingDto>(payload);
+        } catch (JsonException) {
+            return new MqttMessageResult.InvalidPayload(topic, payload);
+        }
+
+        if (dto is null)
             return new MqttMessageResult.InvalidPayload(topic, payload);
 
         DateTimeOffset receivedAt = DateTimeOffset.UtcNow;
 
-        return new MqttMessageResult.Valid(new SoilMoistureReading(plantId, receivedAt, ValueInPercent: value));
+        return new MqttMessageResult.Valid(
+            new SoilMoistureReading(plantId, receivedAt, dto.ValueInPercent, dto.MeasuredAt));
     }
 }
