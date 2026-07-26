@@ -95,6 +95,30 @@ Aspire injects Mosquitto endpoint as `services__mosquitto__mqtt__0=tcp://host:po
 the fallback default (base `appsettings.json` ships `BrokerHost: ""`, which fails `[Required]` validation
 on its own - the Aspire override normally replaces it, the Development default covers the case it doesn't).
 
+### External Broker Mode (real devices on the LAN, e.g. the D1 mini soil sensor)
+
+Aspire's container endpoints bind to loopback only, unreachable from other devices on the
+network - by design, Aspire is a single-machine dev-loop tool, not meant to expose services
+externally. For a broker real hardware needs to reach, run Mosquitto standalone instead:
+
+Run from `src/HomelabBrain/`:
+
+```
+cd mosquitto && docker compose up -d
+cd .. && dotnet run --project HomelabBrain.AppHost -- UseExternalMqttBroker=true
+```
+
+`UseExternalMqttBroker=true` skips the Aspire-managed Mosquitto container in `AppHost/Program.cs`.
+The API falls back to `Mqtt:BrokerHost=localhost` (`appsettings.Development.json`), same
+port (`1883`) the standalone broker publishes - hardware on the LAN connects to the PC's IP
+on that port. Config: `HomelabBrain/mosquitto/{docker-compose.yml,mosquitto.conf}`;
+`mosquitto.conf` explicitly binds listeners to `0.0.0.0` (Docker's own default bind is
+already all-interfaces, but Mosquitto's own default `bind_address` inside the container is
+not, so leaving it out reintroduces the loopback-only problem this mode exists to avoid).
+
+Default (no flag) stays Aspire-managed - unaffected, still the right choice when no external
+device needs to reach the broker.
+
 ## Production Config
 
 Set in cluster secrets/configmap:
