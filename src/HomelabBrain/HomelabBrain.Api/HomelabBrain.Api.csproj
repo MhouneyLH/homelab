@@ -1,7 +1,18 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
+  <PropertyGroup>
+    <!-- Regenerates openapi.json into the repo on every build, so the
+         committed contract can never drift from the actual endpoints. -->
+    <OpenApiGenerateDocumentsOnBuild>true</OpenApiGenerateDocumentsOnBuild>
+    <OpenApiDocumentsDirectory>$(MSBuildProjectDirectory)</OpenApiDocumentsDirectory>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+    <PackageReference Include="Microsoft.Extensions.ApiDescription.Server">
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Scalar.AspNetCore" />
     <ProjectReference Include="..\HomelabBrain.ServiceDefaults\HomelabBrain.ServiceDefaults.csproj" />
     <ProjectReference Include="..\HomelabBrain.PlantAnalyzer\HomelabBrain.PlantAnalyzer.csproj" />
     <ProjectReference Include="..\HomelabBrain.DeviceConfig\HomelabBrain.DeviceConfig.csproj" />

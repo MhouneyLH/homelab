@@ -11,6 +11,18 @@
           "Microsoft.OpenApi": "3.6.0"
         }
       },
+      "Microsoft.Extensions.ApiDescription.Server": {
+        "type": "Direct",
+        "requested": "[11.0.0-preview.6.26359.118, )",
+        "resolved": "11.0.0-preview.6.26359.118",
+        "contentHash": "K4kjw6xPS9WFEnwcnZC9icsc8a6LPg6xkujiazrcXtHVxAkLkeyx/nlZCx9MVXEq43B5J6qRgJx55RnLreeURw=="
+      },
+      "Scalar.AspNetCore": {
+        "type": "Direct",
+        "requested": "[2.16.17, )",
+        "resolved": "2.16.17",
+        "contentHash": "J5FyUxdZE/QbS/s3NSE6XWoBIJwta1eOUBuDbieHm2HSfFELH8hOnxSsoEBreckoekfZ7STsMCMGmmUNPVVosg=="
+      },
       "Microsoft.Extensions.AmbientMetadata.Application": {
         "type": "Transitive",
         "resolved": "9.3.0",
