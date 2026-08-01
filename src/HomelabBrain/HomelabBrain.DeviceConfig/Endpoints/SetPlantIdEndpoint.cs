@@ -1,18 +1,12 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
-using System.Text.RegularExpressions;
 using HomelabBrain.DeviceConfig.Domain;
 using HomelabBrain.DeviceConfig.Infrastructure;
 using Microsoft.AspNetCore.Http;
 
 namespace HomelabBrain.DeviceConfig.Endpoints;
 
-internal static partial class SetPlantIdEndpoint {
-    // Becomes an MQTT topic segment ("plants/{plantId}/soil-moisture"), so
-    // MQTT-special characters (/, +, #) and whitespace are rejected.
-    [GeneratedRegex(@"^[a-zA-Z0-9-]{1,32}$")]
-    private static partial Regex PlantIdPattern();
-
+internal static class SetPlantIdEndpoint {
     [SuppressMessage("Performance", "CA1812", Justification = "Instantiated by minimal API model binding")]
     internal sealed record SetPlantIdRequest(
         [property: JsonPropertyName("plantId")] string PlantId);
@@ -25,11 +19,11 @@ internal static partial class SetPlantIdEndpoint {
         SetPlantIdRequest request,
         DeviceConfigCommandService commandService,
         CancellationToken ct) {
-        Dictionary<string, string[]> errors = Validate(request);
-        if (errors.Count > 0)
-            return Results.ValidationProblem(errors);
-
-        PlantId plantId = new(request.PlantId);
+        if (!PlantId.TryParse(request.PlantId, out PlantId plantId)) {
+            return Results.ValidationProblem(new Dictionary<string, string[]> {
+                ["plantId"] = ["plantId must be 1-32 characters of letters, digits, or hyphens."],
+            });
+        }
 
         Dictionary<string, object?> payload = new() {
             ["plantId"] = plantId.Value,
@@ -40,14 +34,5 @@ internal static partial class SetPlantIdEndpoint {
             .ConfigureAwait(false);
 
         return outcome.ToApiResult(_ => Results.Ok(new SetPlantIdResponse("ok")));
-    }
-
-    private static Dictionary<string, string[]> Validate(SetPlantIdRequest request) {
-        Dictionary<string, string[]> errors = [];
-
-        if (string.IsNullOrWhiteSpace(request.PlantId) || !PlantIdPattern().IsMatch(request.PlantId))
-            errors["plantId"] = ["plantId must be 1-32 characters of letters, digits, or hyphens."];
-
-        return errors;
     }
 }
