@@ -53,6 +53,14 @@ public static class DeviceConfigModule {
             .ProducesProblem(StatusCodes.Status502BadGateway)
             .ProducesProblem(StatusCodes.Status504GatewayTimeout);
 
+        group.MapPost("/broker", SetBrokerEndpoint.Handle)
+            .WithName("SetDeviceBroker")
+            .WithSummary("Set the device's MQTT broker (reboots the device on success)")
+            .Produces<SetBrokerEndpoint.Response>(StatusCodes.Status200OK)
+            .ProducesValidationProblem()
+            .ProducesProblem(StatusCodes.Status502BadGateway)
+            .ProducesProblem(StatusCodes.Status504GatewayTimeout);
+
         return routes;
     }
 }
