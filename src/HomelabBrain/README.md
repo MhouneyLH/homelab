@@ -50,6 +50,14 @@ default 10s -> HTTP 504 if the device never answers). See the firmware side in
   [`HomelabBrain.Api/HomelabBrain.Api.json`](./HomelabBrain.Api/HomelabBrain.Api.json) - regenerated
   automatically on every build, so it can't drift from the real endpoints.
 
+## Health Endpoints
+
+`/healthz` (liveness) and `/readyz` (readiness) - available in every environment, not just
+Development, since a k8s liveness/readiness probe needs them wherever the pod actually runs.
+`/healthz` is a shallow "is the process alive" check only; `/readyz` runs every registered health
+check, including dependencies (so a down MQTT broker takes the pod out of rotation without
+restarting it - restarting wouldn't fix an external dependency anyway).
+
 ## Getting Started
 
 Prerequisites: .NET SDK matching `Directory.Build.props` (currently a `net11.0` preview SDK; the

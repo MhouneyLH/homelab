@@ -163,6 +163,14 @@ DeviceConfigMqtt__BrokerPort = 1883
 OTEL_EXPORTER_OTLP_ENDPOINT = <homelab otel collector grpc endpoint>
 ```
 
+k8s probes (`/healthz` liveness, `/readyz` readiness - `ServiceDefaultsExtensions.MapDefaultEndpoints`):
+```yaml
+livenessProbe:
+  httpGet: { path: /healthz, port: 8080 }
+readinessProbe:
+  httpGet: { path: /readyz, port: 8080 }
+```
+
 ## OpenAPI / Scalar
 
 `HomelabBrain.Api.csproj` sets `OpenApiGenerateDocumentsOnBuild=true`

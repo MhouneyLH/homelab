@@ -9,9 +9,13 @@
 
 @deviceId = a1b2c3d4
 
-### Health
+### Liveness
 
-GET {{HostAddress}}/health
+GET {{HostAddress}}/healthz
+
+### Readiness
+
+GET {{HostAddress}}/readyz
 
 ### OpenAPI contract (Development only)
 
