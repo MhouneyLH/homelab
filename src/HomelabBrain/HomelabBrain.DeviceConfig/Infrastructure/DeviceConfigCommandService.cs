@@ -23,7 +23,7 @@ internal sealed class DeviceConfigCommandService {
     }
 
     public async Task<ConfigCommandOutcome> SendAsync(
-        string deviceId,
+        DeviceId deviceId,
         string operation,
         IReadOnlyDictionary<string, object?> payload,
         CancellationToken ct) {
@@ -38,7 +38,7 @@ internal sealed class DeviceConfigCommandService {
         Task<JsonElement> responseTask = _registry.Register(correlationId, linkedCts.Token);
 
         MqttApplicationMessage message = new MqttApplicationMessageBuilder()
-            .WithTopic($"devices/{deviceId}/config/{operation}")
+            .WithTopic($"devices/{deviceId.Value}/config/{operation}")
             .WithPayload(json)
             .Build();
 

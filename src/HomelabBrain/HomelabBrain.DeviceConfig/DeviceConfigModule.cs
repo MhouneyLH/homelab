@@ -1,4 +1,7 @@
+using HomelabBrain.DeviceConfig.Endpoints;
 using HomelabBrain.DeviceConfig.Infrastructure;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -37,5 +40,19 @@ public static class DeviceConfigModule {
         return builder;
     }
 
-    public static IEndpointRouteBuilder MapDeviceConfig(this IEndpointRouteBuilder routes) => routes;
+    public static IEndpointRouteBuilder MapDeviceConfig(this IEndpointRouteBuilder routes) {
+        RouteGroupBuilder group = routes
+            .MapGroup("/api/devices/{deviceId}/config")
+            .WithTags("DeviceConfig");
+
+        group.MapPost("/wifi", SetWifiEndpoint.Handle)
+            .WithName("SetDeviceWifi")
+            .WithSummary("Set the device's WiFi credentials (reboots the device on success)")
+            .Produces<SetWifiEndpoint.Response>(StatusCodes.Status200OK)
+            .ProducesValidationProblem()
+            .ProducesProblem(StatusCodes.Status502BadGateway)
+            .ProducesProblem(StatusCodes.Status504GatewayTimeout);
+
+        return routes;
+    }
 }
