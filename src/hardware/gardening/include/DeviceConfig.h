@@ -19,3 +19,10 @@ String deviceId();
 DeviceConfig loadDeviceConfig();
 
 void saveDeviceConfig(const DeviceConfig &config);
+
+// plantId becomes an MQTT topic segment ("plants/{plantId}/soil-moisture"),
+// so MQTT-special characters (/, +, #) and whitespace are rejected. Mirrors
+// HomelabBrain.DeviceConfig's SetPlantIdEndpoint pattern (^[a-zA-Z0-9-]{1,32}$) -
+// this is the last line of defense against a device publishing straight to
+// the broker and bypassing the API's own validation, so it must match.
+bool isValidPlantId(const String &plantId);

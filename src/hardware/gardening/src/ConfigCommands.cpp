@@ -26,25 +26,6 @@ void rejectInvalidPayload(const String &topic, JsonDocument &response) {
   publishResponse(topic, response);
 }
 
-// plantId becomes an MQTT topic segment ("plants/{plantId}/soil-moisture"),
-// so MQTT-special characters (/, +, #) and whitespace are rejected. Mirrors
-// HomelabBrain.DeviceConfig's SetPlantIdEndpoint pattern (^[a-zA-Z0-9-]{1,32}$) -
-// this is the last line of defense against a device publishing straight to
-// the broker and bypassing the API's own validation, so it must match.
-bool isValidPlantId(const String &plantId) {
-  if (plantId.length() < 1 || plantId.length() > 32)
-    return false;
-
-  for (unsigned int i = 0; i < plantId.length(); i++) {
-    char c = plantId[i];
-    bool isAlphaNumeric = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9');
-    if (!isAlphaNumeric && c != '-')
-      return false;
-  }
-
-  return true;
-}
-
 void handleWifiSet(const String &topic, JsonDocument &request, JsonDocument &response) {
   if (!request["ssid"].is<const char *>() || !request["password"].is<const char *>()) {
     rejectInvalidPayload(topic, response);

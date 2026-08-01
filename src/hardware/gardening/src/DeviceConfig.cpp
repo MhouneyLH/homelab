@@ -64,3 +64,17 @@ void saveDeviceConfig(const DeviceConfig &config) {
   serializeJson(doc, file);
   file.close();
 }
+
+bool isValidPlantId(const String &plantId) {
+  if (plantId.length() < 1 || plantId.length() > 32)
+    return false;
+
+  for (unsigned int i = 0; i < plantId.length(); i++) {
+    char c = plantId[i];
+    bool isAlphaNumeric = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9');
+    if (!isAlphaNumeric && c != '-')
+      return false;
+  }
+
+  return true;
+}
