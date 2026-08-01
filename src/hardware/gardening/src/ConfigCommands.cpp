@@ -26,14 +26,43 @@ void rejectInvalidPayload(const String &topic, JsonDocument &response) {
   publishResponse(topic, response);
 }
 
+// plantId becomes an MQTT topic segment ("plants/{plantId}/soil-moisture"),
+// so MQTT-special characters (/, +, #) and whitespace are rejected. Mirrors
+// HomelabBrain.DeviceConfig's SetPlantIdEndpoint pattern (^[a-zA-Z0-9-]{1,32}$) -
+// this is the last line of defense against a device publishing straight to
+// the broker and bypassing the API's own validation, so it must match.
+bool isValidPlantId(const String &plantId) {
+  if (plantId.length() < 1 || plantId.length() > 32)
+    return false;
+
+  for (unsigned int i = 0; i < plantId.length(); i++) {
+    char c = plantId[i];
+    bool isAlphaNumeric = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9');
+    if (!isAlphaNumeric && c != '-')
+      return false;
+  }
+
+  return true;
+}
+
 void handleWifiSet(const String &topic, JsonDocument &request, JsonDocument &response) {
   if (!request["ssid"].is<const char *>() || !request["password"].is<const char *>()) {
     rejectInvalidPayload(topic, response);
     return;
   }
 
-  config.wifiSsid = request["ssid"].as<String>();
-  config.wifiPassword = request["password"].as<String>();
+  String ssid = request["ssid"].as<String>();
+  String password = request["password"].as<String>();
+
+  bool ssidValid = ssid.length() >= 1 && ssid.length() <= 32;
+  bool passwordValid = password.length() == 0 || (password.length() >= 8 && password.length() <= 63);
+  if (!ssidValid || !passwordValid) {
+    rejectInvalidPayload(topic, response);
+    return;
+  }
+
+  config.wifiSsid = ssid;
+  config.wifiPassword = password;
   saveDeviceConfig(config);
 
   response["status"] = "ok";
@@ -50,8 +79,15 @@ void handleBrokerSet(const String &topic, JsonDocument &request, JsonDocument &r
     return;
   }
 
-  config.mqttBrokerHost = request["host"].as<String>();
-  config.mqttBrokerPort = request["port"].as<uint16_t>();
+  String host = request["host"].as<String>();
+  int port = request["port"].as<int>();
+  if (host.length() < 1 || port < 1 || port > 65535) {
+    rejectInvalidPayload(topic, response);
+    return;
+  }
+
+  config.mqttBrokerHost = host;
+  config.mqttBrokerPort = (uint16_t)port;
   saveDeviceConfig(config);
 
   response["status"] = "ok";
@@ -63,7 +99,7 @@ void handleBrokerSet(const String &topic, JsonDocument &request, JsonDocument &r
 }
 
 void handlePlantIdSet(const String &topic, JsonDocument &request, JsonDocument &response) {
-  if (!request["plantId"].is<const char *>()) {
+  if (!request["plantId"].is<const char *>() || !isValidPlantId(request["plantId"].as<String>())) {
     rejectInvalidPayload(topic, response);
     return;
   }
