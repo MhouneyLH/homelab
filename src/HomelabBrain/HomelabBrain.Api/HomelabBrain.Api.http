@@ -1,3 +1,12 @@
+// VS Code: install the "httpYac" extension (anweber.vscode-httpyac), not the
+// more popular "REST Client" - REST Client doesn't read http-client.env.json
+// (it wants env vars in .vscode/settings.json instead), httpYac does.
+// Pick an environment via the status bar / "httpYac: Select Environment".
+// Secrets (wifiSsid/wifiPassword) live in the gitignored
+// http-client.private.env.json, auto-merged over http-client.env.json - copy
+// http-client.private.env.json.example to http-client.private.env.json and
+// fill in real values.
+
 @deviceId = a1b2c3d4
 
 ### Health
