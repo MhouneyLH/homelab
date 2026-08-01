@@ -7,8 +7,12 @@ namespace HomelabBrain.DeviceConfig.Infrastructure;
 internal sealed class MqttOptions {
     public const string SectionName = "DeviceConfigMqtt";
 
+    // Overridden by AddDeviceConfig's Aspire endpoint lookup (or a real
+    // appsettings override) outside local dev; "localhost" is a working
+    // default so the app - and build-time OpenAPI doc generation, which
+    // boots the real host - never fails on missing config.
     [Required]
-    public string BrokerHost { get; set; } = default!;
+    public string BrokerHost { get; set; } = "localhost";
 
     [Range(1, 65535)]
     public int BrokerPort { get; set; } = 1883;
