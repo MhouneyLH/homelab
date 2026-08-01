@@ -1,0 +1,42 @@
+@deviceId = a1b2c3d4
+
+### Health
+
+GET {{HostAddress}}/health
+
+### OpenAPI contract (Development only)
+
+GET {{HostAddress}}/openapi/v1.json
+
+### Get device config
+
+GET {{HostAddress}}/api/devices/{{deviceId}}/config
+
+### Set WiFi credentials (device reboots on success)
+
+POST {{HostAddress}}/api/devices/{{deviceId}}/config/wifi
+Content-Type: application/json
+
+{
+  "ssid": "{{wifiSsid}}",
+  "password": "{{wifiPassword}}"
+}
+
+### Set MQTT broker (device reboots on success)
+
+POST {{HostAddress}}/api/devices/{{deviceId}}/config/broker
+Content-Type: application/json
+
+{
+  "host": "10.0.129.7",
+  "port": 1883
+}
+
+### Set plant id (applied live, no reboot)
+
+POST {{HostAddress}}/api/devices/{{deviceId}}/config/plant-id
+Content-Type: application/json
+
+{
+  "plantId": "basil-1"
+}
