@@ -11,6 +11,7 @@ Each module is a separate project: `HomelabBrain.{ModuleName}`.
 ```
 HomelabBrain.Api              - host, composition root
 HomelabBrain.PlantAnalyzer    - module: MQTT consumer + plant sensor metrics
+HomelabBrain.DeviceConfig     - module: MQTT request-reply device config (WiFi/broker/plant-id)
 HomelabBrain.ServiceDefaults  - Aspire shared telemetry/health
 HomelabBrain.AppHost          - Aspire orchestration (local dev only)
 ```
@@ -32,10 +33,18 @@ All internal types stay `internal`.
 ```
 HomelabBrain.{Module}/
   Domain/          - records, value objects, union types
-  Application/     - use cases, parsers, handlers
+  Application/     - use cases, parsers, handlers (message-driven modules, e.g. PlantAnalyzer)
+  Endpoints/       - HTTP-triggered modules: one static class per endpoint, vertical-slice
+                     style (nested Request/Response records, Handle, Validate all in one file)
   Infrastructure/  - external I/O (MQTT, DB, HTTP), options, metrics
   {Module}Module.cs  - public AddX / MapX
 ```
+
+Use `Application/` for modules driven by an inbound message stream (MQTT consumer parsing/handling).
+Use `Endpoints/` for modules exposing REST endpoints - see `HomelabBrain.DeviceConfig/Endpoints/*`
+for the pattern: each file is self-contained (`Request`, `Response`, `Handle`, `Validate`), wired
+into routes from `{Module}Module.MapX()`. Don't share validation/mapping logic across slices beyond
+small generic infra (e.g. `ConfigCommandResults.ToApiResult` - HTTP status mapping, not business logic).
 
 ## Union Types (Discriminated Unions)
 
@@ -61,6 +70,27 @@ plants/{plantId}/{sensorType}
 
 Payload: decimal number (float, invariant culture).
 Examples: `plants/basil-1/moisture`, `plants/tomato-2/temperature`.
+
+## DeviceConfig MQTT Request-Reply Convention
+
+Addressed by the device's stable chip-id (`DeviceId`), never by `plantId` - plantId is one of
+the fields that can itself be changed by this API, so it can't double as the routing key.
+
+```
+devices/{deviceId}/config/wifi/set        {correlationId, ssid, password}
+devices/{deviceId}/config/broker/set      {correlationId, host, port}
+devices/{deviceId}/config/plant-id/set    {correlationId, plantId}
+devices/{deviceId}/config/get             {correlationId}
+```
+
+Each publishes its result to `<topic>/response` with `{correlationId, status: "ok"|"error", ...}`.
+`wifi/set` and `broker/set` reboot the device on success (new network/broker only takes effect after
+reboot); `plant-id/set` applies live. The API (`DeviceConfigCommandService`) generates the
+`correlationId`, publishes, and awaits the matching `/response` via `PendingCommandRegistry`
+(a `ConcurrentDictionary<correlationId, TaskCompletionSource>`), timing out after
+`DeviceConfigMqtt:CommandTimeoutSeconds` (default 10s) -> HTTP 504.
+
+Firmware side: `src/hardware/gardening/src/ConfigCommands.cpp` (see that project's AGENTS.md/README).
 
 ## Metrics
 
@@ -90,10 +120,13 @@ Aspire starts: Mosquitto (1883/9001), OTel collector (4317/4318), API.
 OTel collector config: `HomelabBrain.AppHost/otel-collector-config.yaml` (debug exporter - swap for real endpoint in prod).
 
 Aspire injects Mosquitto endpoint as `services__mosquitto__mqtt__0=tcp://host:port`.
-`PlantAnalyzerModule.AddPlantAnalyzer` reads this and overrides `Mqtt:BrokerHost`/`Mqtt:BrokerPort`.
-`HomelabBrain.Api/appsettings.Development.json` sets `Mqtt:BrokerHost=localhost`/`BrokerPort=1883` as
-the fallback default (base `appsettings.json` ships `BrokerHost: ""`, which fails `[Required]` validation
-on its own - the Aspire override normally replaces it, the Development default covers the case it doesn't).
+`PlantAnalyzerModule.AddPlantAnalyzer` and `DeviceConfigModule.AddDeviceConfig` both read this and
+override `Mqtt:BrokerHost`/`Mqtt:BrokerPort` and `DeviceConfigMqtt:BrokerHost`/`BrokerPort` respectively -
+each module owns its own MQTT client/connection, deliberately not shared, so one module's
+subscribe/reconnect churn can't affect the other. `MqttOptions.BrokerHost` defaults to `"localhost"`
+in code (not `appsettings.json`) so the app - and build-time OpenAPI doc generation, which boots
+the real host to introspect routes - never fails to start on missing config; Aspire/production
+override it via the endpoint lookup above or a real config value.
 
 ### External Broker Mode (real devices on the LAN, e.g. the D1 mini soil sensor)
 
@@ -125,8 +158,21 @@ Set in cluster secrets/configmap:
 ```
 Mqtt__BrokerHost = <homelab mosquitto host>
 Mqtt__BrokerPort = 1883
+DeviceConfigMqtt__BrokerHost = <homelab mosquitto host>
+DeviceConfigMqtt__BrokerPort = 1883
 OTEL_EXPORTER_OTLP_ENDPOINT = <homelab otel collector grpc endpoint>
 ```
+
+## OpenAPI / Scalar
+
+`HomelabBrain.Api.csproj` sets `OpenApiGenerateDocumentsOnBuild=true`
+(`Microsoft.Extensions.ApiDescription.Server`), so `HomelabBrain.Api/HomelabBrain.Api.json` (the
+OpenAPI contract) regenerates on every `dotnet build` and is committed - it can never silently
+drift from the actual endpoints. Doc generation boots the real host to introspect routes, which is
+why `MqttOptions.BrokerHost` needs a working default (see Local Development above).
+
+Interactive docs: `/scalar/v1` (Scalar UI). Raw spec: `/openapi/v1.json`. Both `Development`-only,
+same as the existing `MapOpenApi()` gate in `Program.cs`.
 
 ## Code Style
 

@@ -68,6 +68,34 @@ pio run
 device's *initial* config - once flashed, WiFi/broker/plant-id can be
 changed at runtime, see "Runtime reconfiguration" below.
 
+## Architecture
+
+```
+src/main.cpp              - setup()/loop(), WiFi/NTP/MQTT connect, sensor publish
+src/DeviceConfig.cpp       - DeviceConfig struct, LittleFS load/save (/config.json)
+src/ConfigCommands.cpp     - MQTT config command handlers (set-wifi/broker/plant-id, get)
+include/generated_config.h - gitignored, written by load_env.py from .env at build time
+```
+
+On boot, `loadDeviceConfig()` reads `/config.json` from LittleFS; on first boot (no file yet) it
+seeds from the compile-time defaults in `generated_config.h` and persists them. From then on,
+flash contents - not the `.env` the firmware was built with - are the source of truth, so
+reflashing doesn't silently revert a config change made at runtime.
+
+## Runtime Reconfiguration
+
+The device subscribes to MQTT config commands under `devices/{chip-id}/config/` (chip-id from
+`ESP.getChipId()`, stable across reconfigs - unlike `plantId`, which is itself one of the fields
+that can change). See [`HomelabBrain README`](../../HomelabBrain/README.md#mqtt-topics) for the
+full topic list and the REST API (`HomelabBrain.DeviceConfig`) that drives this from the other
+end. In short:
+
+- `wifi/set`, `broker/set`: persisted to flash, acknowledged over the *current* connection, then
+  `ESP.restart()` - the new network/broker only takes effect after reboot.
+- `plant-id/set`: persisted and applied immediately (just changes the soil-moisture publish
+  topic), no reboot needed.
+- `get`: returns the current config (WiFi password never included in the response).
+
 ## Serial Upload Permissions
 
 See `AGENTS.md`.
