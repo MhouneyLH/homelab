@@ -48,7 +48,7 @@ public static class DeviceConfigModule {
         group.MapPost("/wifi", SetWifiEndpoint.Handle)
             .WithName("SetDeviceWifi")
             .WithSummary("Set the device's WiFi credentials (reboots the device on success)")
-            .Produces<SetWifiEndpoint.Response>(StatusCodes.Status200OK)
+            .Produces<SetWifiEndpoint.SetWifiResponse>(StatusCodes.Status200OK)
             .ProducesValidationProblem()
             .ProducesProblem(StatusCodes.Status502BadGateway)
             .ProducesProblem(StatusCodes.Status504GatewayTimeout);
@@ -56,7 +56,7 @@ public static class DeviceConfigModule {
         group.MapPost("/broker", SetBrokerEndpoint.Handle)
             .WithName("SetDeviceBroker")
             .WithSummary("Set the device's MQTT broker (reboots the device on success)")
-            .Produces<SetBrokerEndpoint.Response>(StatusCodes.Status200OK)
+            .Produces<SetBrokerEndpoint.SetBrokerResponse>(StatusCodes.Status200OK)
             .ProducesValidationProblem()
             .ProducesProblem(StatusCodes.Status502BadGateway)
             .ProducesProblem(StatusCodes.Status504GatewayTimeout);
@@ -64,7 +64,7 @@ public static class DeviceConfigModule {
         group.MapPost("/plant-id", SetPlantIdEndpoint.Handle)
             .WithName("SetDevicePlantId")
             .WithSummary("Set the device's plant id (applied live, no reboot)")
-            .Produces<SetPlantIdEndpoint.Response>(StatusCodes.Status200OK)
+            .Produces<SetPlantIdEndpoint.SetPlantIdResponse>(StatusCodes.Status200OK)
             .ProducesValidationProblem()
             .ProducesProblem(StatusCodes.Status502BadGateway)
             .ProducesProblem(StatusCodes.Status504GatewayTimeout);
@@ -72,7 +72,7 @@ public static class DeviceConfigModule {
         group.MapGet("/", GetConfigEndpoint.Handle)
             .WithName("GetDeviceConfig")
             .WithSummary("Get the device's current configuration (excludes WiFi password)")
-            .Produces<GetConfigEndpoint.Response>(StatusCodes.Status200OK)
+            .Produces<GetConfigEndpoint.GetConfigResponse>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status502BadGateway)
             .ProducesProblem(StatusCodes.Status504GatewayTimeout);
 

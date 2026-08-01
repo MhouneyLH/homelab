@@ -8,16 +8,16 @@ namespace HomelabBrain.DeviceConfig.Endpoints;
 
 internal static class SetBrokerEndpoint {
     [SuppressMessage("Performance", "CA1812", Justification = "Instantiated by minimal API model binding")]
-    internal sealed record Request(
+    internal sealed record SetBrokerRequest(
         [property: JsonPropertyName("host")] string Host,
         [property: JsonPropertyName("port")] int Port);
 
-    internal sealed record Response(
+    internal sealed record SetBrokerResponse(
         [property: JsonPropertyName("status")] string Status);
 
     public static async Task<IResult> Handle(
         DeviceId deviceId,
-        Request request,
+        SetBrokerRequest request,
         DeviceConfigCommandService commandService,
         CancellationToken ct) {
         Dictionary<string, string[]> errors = Validate(request);
@@ -33,10 +33,10 @@ internal static class SetBrokerEndpoint {
             .SendAsync(deviceId, "broker/set", payload, ct)
             .ConfigureAwait(false);
 
-        return outcome.ToApiResult(_ => Results.Ok(new Response("ok")));
+        return outcome.ToApiResult(_ => Results.Ok(new SetBrokerResponse("ok")));
     }
 
-    private static Dictionary<string, string[]> Validate(Request request) {
+    private static Dictionary<string, string[]> Validate(SetBrokerRequest request) {
         Dictionary<string, string[]> errors = [];
 
         if (string.IsNullOrWhiteSpace(request.Host))

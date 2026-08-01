@@ -14,15 +14,15 @@ internal static partial class SetPlantIdEndpoint {
     private static partial Regex PlantIdPattern();
 
     [SuppressMessage("Performance", "CA1812", Justification = "Instantiated by minimal API model binding")]
-    internal sealed record Request(
+    internal sealed record SetPlantIdRequest(
         [property: JsonPropertyName("plantId")] string PlantId);
 
-    internal sealed record Response(
+    internal sealed record SetPlantIdResponse(
         [property: JsonPropertyName("status")] string Status);
 
     public static async Task<IResult> Handle(
         DeviceId deviceId,
-        Request request,
+        SetPlantIdRequest request,
         DeviceConfigCommandService commandService,
         CancellationToken ct) {
         Dictionary<string, string[]> errors = Validate(request);
@@ -39,10 +39,10 @@ internal static partial class SetPlantIdEndpoint {
             .SendAsync(deviceId, "plant-id/set", payload, ct)
             .ConfigureAwait(false);
 
-        return outcome.ToApiResult(_ => Results.Ok(new Response("ok")));
+        return outcome.ToApiResult(_ => Results.Ok(new SetPlantIdResponse("ok")));
     }
 
-    private static Dictionary<string, string[]> Validate(Request request) {
+    private static Dictionary<string, string[]> Validate(SetPlantIdRequest request) {
         Dictionary<string, string[]> errors = [];
 
         if (string.IsNullOrWhiteSpace(request.PlantId) || !PlantIdPattern().IsMatch(request.PlantId))

@@ -26,7 +26,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Request"
+                "$ref": "#/components/schemas/SetWifiRequest"
               }
             }
           },
@@ -38,7 +38,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Response"
+                  "$ref": "#/components/schemas/SetWifiResponse"
                 }
               }
             }
@@ -97,7 +97,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Request"
+                "$ref": "#/components/schemas/SetBrokerRequest"
               }
             }
           },
@@ -109,7 +109,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Response"
+                  "$ref": "#/components/schemas/SetBrokerResponse"
                 }
               }
             }
@@ -168,7 +168,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Request"
+                "$ref": "#/components/schemas/SetPlantIdRequest"
               }
             }
           },
@@ -180,7 +180,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Response"
+                  "$ref": "#/components/schemas/SetPlantIdResponse"
                 }
               }
             }
@@ -241,7 +241,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Response"
+                  "$ref": "#/components/schemas/GetConfigResponse"
                 }
               }
             }
@@ -272,6 +272,34 @@
   },
   "components": {
     "schemas": {
+      "GetConfigResponse": {
+        "required": [
+          "wifiSsid",
+          "mqttBrokerHost",
+          "mqttBrokerPort",
+          "plantId"
+        ],
+        "type": "object",
+        "properties": {
+          "wifiSsid": {
+            "type": "string"
+          },
+          "mqttBrokerHost": {
+            "type": "string"
+          },
+          "mqttBrokerPort": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "plantId": {
+            "type": "string"
+          }
+        }
+      },
       "HttpValidationProblemDetails": {
         "type": "object",
         "properties": {
@@ -357,7 +385,60 @@
           }
         }
       },
-      "Request": {
+      "SetBrokerRequest": {
+        "required": [
+          "host",
+          "port"
+        ],
+        "type": "object",
+        "properties": {
+          "host": {
+            "type": "string"
+          },
+          "port": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "SetBrokerResponse": {
+        "required": [
+          "status"
+        ],
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string"
+          }
+        }
+      },
+      "SetPlantIdRequest": {
+        "required": [
+          "plantId"
+        ],
+        "type": "object",
+        "properties": {
+          "plantId": {
+            "type": "string"
+          }
+        }
+      },
+      "SetPlantIdResponse": {
+        "required": [
+          "status"
+        ],
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string"
+          }
+        }
+      },
+      "SetWifiRequest": {
         "required": [
           "ssid",
           "password"
@@ -372,7 +453,7 @@
           }
         }
       },
-      "Response": {
+      "SetWifiResponse": {
         "required": [
           "status"
         ],

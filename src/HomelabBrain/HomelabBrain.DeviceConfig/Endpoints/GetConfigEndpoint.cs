@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Http;
 namespace HomelabBrain.DeviceConfig.Endpoints;
 
 internal static class GetConfigEndpoint {
-    internal sealed record Response(
+    internal sealed record GetConfigResponse(
         [property: JsonPropertyName("wifiSsid")] string WifiSsid,
         [property: JsonPropertyName("mqttBrokerHost")] string MqttBrokerHost,
         [property: JsonPropertyName("mqttBrokerPort")] int MqttBrokerPort,
@@ -20,7 +20,7 @@ internal static class GetConfigEndpoint {
             .SendAsync(deviceId, "get", new Dictionary<string, object?>(), ct)
             .ConfigureAwait(false);
 
-        return outcome.ToApiResult(payload => Results.Ok(new Response(
+        return outcome.ToApiResult(payload => Results.Ok(new GetConfigResponse(
             payload.GetProperty("wifiSsid").GetString() ?? string.Empty,
             payload.GetProperty("mqttBrokerHost").GetString() ?? string.Empty,
             payload.GetProperty("mqttBrokerPort").GetInt32(),

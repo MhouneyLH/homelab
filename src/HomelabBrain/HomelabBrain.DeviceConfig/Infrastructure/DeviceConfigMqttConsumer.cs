@@ -75,8 +75,10 @@ internal sealed partial class DeviceConfigMqttConsumer : BackgroundService {
             }
 
             string? correlationId = correlationIdElement.GetString();
-            if (string.IsNullOrEmpty(correlationId))
+            if (string.IsNullOrEmpty(correlationId)) {
+                LogMissingCorrelationId(topic);
                 return Task.CompletedTask;
+            }
 
             _registry.Resolve(correlationId, doc.RootElement.Clone());
         }

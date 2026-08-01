@@ -8,16 +8,16 @@ namespace HomelabBrain.DeviceConfig.Endpoints;
 
 internal static class SetWifiEndpoint {
     [SuppressMessage("Performance", "CA1812", Justification = "Instantiated by minimal API model binding")]
-    internal sealed record Request(
+    internal sealed record SetWifiRequest(
         [property: JsonPropertyName("ssid")] string Ssid,
         [property: JsonPropertyName("password")] string Password);
 
-    internal sealed record Response(
+    internal sealed record SetWifiResponse(
         [property: JsonPropertyName("status")] string Status);
 
     public static async Task<IResult> Handle(
         DeviceId deviceId,
-        Request request,
+        SetWifiRequest request,
         DeviceConfigCommandService commandService,
         CancellationToken ct) {
         Dictionary<string, string[]> errors = Validate(request);
@@ -33,10 +33,10 @@ internal static class SetWifiEndpoint {
             .SendAsync(deviceId, "wifi/set", payload, ct)
             .ConfigureAwait(false);
 
-        return outcome.ToApiResult(_ => Results.Ok(new Response("ok")));
+        return outcome.ToApiResult(_ => Results.Ok(new SetWifiResponse("ok")));
     }
 
-    private static Dictionary<string, string[]> Validate(Request request) {
+    private static Dictionary<string, string[]> Validate(SetWifiRequest request) {
         Dictionary<string, string[]> errors = [];
 
         if (string.IsNullOrWhiteSpace(request.Ssid))
