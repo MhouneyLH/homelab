@@ -18,16 +18,18 @@ versions).
 - Output is inverted relative to raw moisture: **higher voltage/ADC value = drier
   soil, lower value = wetter soil**.
 - Typical raw `analogRead()` range on this board is roughly 1023 (dry, sensor in
-  air) down to ~300-400 (fully submerged in water) - exact numbers vary per unit
-  and must be calibrated:
-  1. Read raw value with sensor dry (in air) -> record as `DRY_RAW`.
-  2. Read raw value with sensor in water -> record as `WET_RAW`.
-  3. Map `analogRead()` between those two points, inverted, to get 0-100%:
-     `percent = map(raw, DRY_RAW, WET_RAW, 0, 100)`.
+  air) down to ~300-400 (fully submerged in water) - exact numbers vary per unit.
 
-`readSoilMoisturePercent()` in [`src/main.cpp`](./src/main.cpp) currently uses placeholder
-`map(raw, 0, 1023, 0, 100)` (not inverted, not calibrated) - replace with real
-`DRY_RAW`/`WET_RAW` constants once measured.
+`readSoilMoistureRaw()` in [`src/main.cpp`](./src/main.cpp) just returns `analogRead()` directly
+(0-1023) - the firmware sends the **raw, uncalibrated** ADC value over MQTT and does no
+moisture-percent conversion itself. Calibration (mapping raw -> a 0-100% moisture reading)
+happens backend-side in
+[`HomelabBrain.PlantAnalyzer`](../../HomelabBrain/HomelabBrain.PlantAnalyzer) via
+`SoilMoistureCalibration:DryRaw`/`WetRaw` config, deliberately not on-device - recalibrating a
+drifting or replaced sensor is then a config change, not a reflash. See the
+[HomelabBrain AGENTS.md](../../HomelabBrain/AGENTS.md)'s Metrics section for the calibration
+formula and where to set those two values once you've measured your unit's `DryRaw`/`WetRaw`
+(sensor in air / fully submerged, per the bullet points above).
 
 ## D1 Mini Pinout
 

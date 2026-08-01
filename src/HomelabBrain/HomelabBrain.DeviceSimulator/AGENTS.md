@@ -17,10 +17,18 @@ just an [MQTTnet](https://github.com/dotnet/MQTTnet) client. Started by
 [`SimulatedDevice.cs`](./SimulatedDevice.cs) re-implements
 [`ConfigCommands.cpp`](../../hardware/gardening/src/ConfigCommands.cpp)'s four operations
 (`wifi/set`, `broker/set`, `plant-id/set`, `get`) with the same validation rules, same JSON
-shapes, same topic convention (`devices/{deviceId}/config/...`). If you change one side, change
-the other - there's no shared code between the C++ firmware and this C# simulator (different
-languages, different toolchains), so parity is manual and easy to let drift. Grep both files side
-by side before trusting the simulator to represent real device behavior.
+shapes, same topic convention (`devices/{deviceId}/config/...`). It also publishes fake sensor
+readings every 5s under the same topic [`main.cpp`](../../hardware/gardening/src/main.cpp) uses
+(`devices/{deviceId}/plants/{plantId}/soil-moisture`, `{"rawValue": <int>, "measuredAt": ...}` -
+uncalibrated raw ADC, same as the real firmware; see the root
+[`AGENTS.md`](../AGENTS.md)'s Metrics section for where calibration happens). If you change one
+side, change the other - there's no shared code between the C++ firmware and this C# simulator
+(different languages, different toolchains), so parity is manual and easy to let drift. Grep both
+files side by side before trusting the simulator to represent real device behavior.
+
+Subscribes to the four exact config-command topics, not a prefix wildcard - a wildcard on
+`ConfigTopicPrefix` would also match this device's own `<topic>/response` publishes (learned by
+watching it log "Unknown operation: get/response" against itself).
 
 Differences from a real device (by design, not oversights):
 - No flash persistence - state resets on restart.

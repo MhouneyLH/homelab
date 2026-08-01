@@ -75,12 +75,20 @@ Use unions for any operation that can produce different outcomes.
 ## MQTT Topic Convention
 
 ```
-plants/{plantId}/{sensorType}
+devices/{deviceId}/plants/{plantId}/{sensorType}
 ```
 
-Payload: decimal number (float, invariant culture).
-Examples: `plants/basil-1/moisture`, `plants/tomato-2/temperature`.
-Parsed in [`MqttMessageParser`](./HomelabBrain.PlantAnalyzer/Application/MqttMessageParser.cs).
+deviceId leads (stable chip-id), plantId nested underneath (mutable business label) - same
+addressing principle as DeviceConfig below, and for the same reason: plantId can be reassigned
+via `plant-id/set`, so it can't be a stable routing key on its own.
+
+Example: `devices/a1b2c3d4/plants/basil-1/soil-moisture`.
+Payload (JSON): `{"rawValue": <int 0-1023>, "measuredAt": "<ISO 8601 UTC>"}` - raw ADC reading,
+uncalibrated. See [`SoilMoistureReadingDto`](./HomelabBrain.PlantAnalyzer/Contracts/SoilMoistureReadingDto.cs).
+Parsed in [`MqttMessageParser`](./HomelabBrain.PlantAnalyzer/Application/MqttMessageParser.cs);
+subscribed in
+[`MqttConsumerService`](./HomelabBrain.PlantAnalyzer/Infrastructure/MqttConsumerService.cs) as
+`devices/+/plants/#`, not `devices/#` (see that file's comment for why).
 
 ## DeviceConfig MQTT Request-Reply Convention
 
@@ -111,11 +119,22 @@ Firmware side: [`src/hardware/gardening/src/ConfigCommands.cpp`](../hardware/gar
 Meter name: `HomelabBrain.PlantAnalyzer`
 ([OpenTelemetry Metrics API](https://opentelemetry.io/docs/languages/net/instrumentation/#metrics))
 Key metrics:
-- `plants.sensor.reading` (histogram) - tags: `plant.id`, `sensor.type`
+- `plants.soil_moisture` (gauge, `%`) - calibrated via
+  [`SoilMoistureCalibrator`](./HomelabBrain.PlantAnalyzer/Application/SoilMoistureCalibrator.cs) -
+  tags: `device.id`, `plant.id`, `sensor.type`. This is the one to chart in Grafana.
+- `plants.soil_moisture.raw` (gauge, uncalibrated ADC reading 0-1023) - same tags. For
+  debugging/recalibrating, not for dashboards.
 - `plants.mqtt.messages.received` (counter)
-- `plants.mqtt.messages.invalid` (counter) - tag: `reason`
+- `plants.mqtt.messages.invalid` (counter) - tag: `error.type`
+
+Gauges, not Histograms: these are the current value of a sensor, not a distribution to bucket.
 
 Defined in [`PlantMetrics.cs`](./HomelabBrain.PlantAnalyzer/Infrastructure/PlantMetrics.cs).
+Calibration config: `SoilMoistureCalibration:DryRaw`/`WetRaw` (see
+[`CalibrationOptions.cs`](./HomelabBrain.PlantAnalyzer/Infrastructure/CalibrationOptions.cs)) -
+defaults are the sensor's README ballpark (air ~1023, submerged ~300-400), not calibrated for any
+specific physical unit. Override per deployment; this lives in backend config specifically so
+recalibrating a drifting sensor doesn't require reflashing the device.
 Metrics exported via OTLP (`OTEL_EXPORTER_OTLP_ENDPOINT`) to homelab
 [OpenTelemetry Collector](https://opentelemetry.io/docs/collector/).
 Each module self-registers its meter in `AddX()` via `AddOpenTelemetry().WithMetrics(m => m.AddMeter(...))`.
@@ -200,6 +219,8 @@ Mqtt__BrokerHost = <homelab mosquitto host>
 Mqtt__BrokerPort = 1883
 DeviceConfigMqtt__BrokerHost = <homelab mosquitto host>
 DeviceConfigMqtt__BrokerPort = 1883
+SoilMoistureCalibration__DryRaw = <measured, sensor in air>
+SoilMoistureCalibration__WetRaw = <measured, sensor submerged>
 OTEL_EXPORTER_OTLP_ENDPOINT = <homelab otel collector grpc endpoint>
 ```
 

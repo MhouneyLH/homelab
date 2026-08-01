@@ -33,13 +33,18 @@ types, package/lock-file rules).
 
 ## MQTT Topics
 
-Sensor readings (device -> API, fire-and-forget):
+Sensor readings (device -> API, fire-and-forget), nested under the device's stable chip-id, same
+addressing principle as the config topics below:
 ```
-plants/{plantId}/{sensorType}          e.g. plants/basil-1/soil-moisture
+devices/{deviceId}/plants/{plantId}/{sensorType}     e.g. devices/a1b2c3d4/plants/basil-1/soil-moisture
 ```
+Payload carries the **raw ADC reading** (`rawValue`, 0-1023), not a calibrated percentage -
+[`HomelabBrain.PlantAnalyzer`](./HomelabBrain.PlantAnalyzer) converts it via
+[`SoilMoistureCalibrator`](./HomelabBrain.PlantAnalyzer/Application/SoilMoistureCalibrator.cs)
+and `SoilMoistureCalibration:DryRaw`/`WetRaw`, so recalibrating a drifting sensor is a config
+change, not a reflash.
 
-Device config, request-reply (API -> device -> API), addressed by the device's stable chip-id
-rather than `plantId` (since plantId is itself one of the reconfigurable fields):
+Device config, request-reply (API -> device -> API), addressed the same way:
 ```
 devices/{deviceId}/config/wifi/set        -> reboots device on success
 devices/{deviceId}/config/broker/set      -> reboots device on success
