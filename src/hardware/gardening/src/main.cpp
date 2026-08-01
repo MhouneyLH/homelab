@@ -3,6 +3,7 @@
 #include <PubSubClient.h>
 #include <ArduinoJson.h>
 #include <time.h>
+#include "DeviceConfig.h"
 #include "generated_config.h"
 
 #ifndef WIFI_SSID
@@ -21,20 +22,23 @@
 #error "PLANT_ID not defined - set INIT_PLANT_ID in .env (see .env.example)"
 #endif
 
-static const char *const MQTT_TOPIC = "plants/" PLANT_ID "/soil-moisture";
 static const unsigned long PUBLISH_INTERVAL_MS = 1000;
 static const int SOIL_MOISTURE_PIN = A0;
 
 WiFiClient wifiClient;
 PubSubClient mqttClient(wifiClient);
 
+DeviceConfig config;
+String soilMoistureTopic;
+String mqttClientId;
+
 unsigned long lastPublish = 0;
 
 void connectWiFi()
 {
-  Serial.printf("Connecting to WiFi SSID \"%s\"...\n", WIFI_SSID);
+  Serial.printf("Connecting to WiFi SSID \"%s\"...\n", config.wifiSsid.c_str());
   WiFi.mode(WIFI_STA);
-  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+  WiFi.begin(config.wifiSsid.c_str(), config.wifiPassword.c_str());
   while (WiFi.status() != WL_CONNECTED)
   {
     delay(500);
@@ -57,10 +61,10 @@ void syncTime()
 
 void connectMqtt()
 {
-  Serial.printf("Connecting to MQTT broker %s:%d...\n", MQTT_BROKER_HOST, MQTT_BROKER_PORT);
+  Serial.printf("Connecting to MQTT broker %s:%d...\n", config.mqttBrokerHost.c_str(), config.mqttBrokerPort);
   while (!mqttClient.connected())
   {
-    if (mqttClient.connect("d1-mini-gardening"))
+    if (mqttClient.connect(mqttClientId.c_str()))
     {
       Serial.println("MQTT connected.");
     }
@@ -97,16 +101,21 @@ void publishReading()
   char payload[128];
   serializeJson(doc, payload);
 
-  mqttClient.publish(MQTT_TOPIC, payload);
-  Serial.printf("Published to %s: %s\n", MQTT_TOPIC, payload);
+  mqttClient.publish(soilMoistureTopic.c_str(), payload);
+  Serial.printf("Published to %s: %s\n", soilMoistureTopic.c_str(), payload);
 }
 
 void setup()
 {
   Serial.begin(115200);
+
+  config = loadDeviceConfig();
+  soilMoistureTopic = "plants/" + config.plantId + "/soil-moisture";
+  mqttClientId = "d1-mini-gardening-" + deviceId();
+
   connectWiFi();
   syncTime();
-  mqttClient.setServer(MQTT_BROKER_HOST, MQTT_BROKER_PORT);
+  mqttClient.setServer(config.mqttBrokerHost.c_str(), config.mqttBrokerPort);
   connectMqtt();
 }
 
