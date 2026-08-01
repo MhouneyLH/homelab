@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\HomelabBrain.Api\HomelabBrain.Api.csproj" />
+    <ProjectReference Include="..\HomelabBrain.DeviceSimulator\HomelabBrain.DeviceSimulator.csproj" />
   </ItemGroup>
 
 </Project>

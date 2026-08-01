@@ -9,6 +9,13 @@ var builder = DistributedApplication.CreateBuilder(args);
 // but its endpoint proxy binds to loopback only - not reachable from other devices.
 bool useExternalMqttBroker = builder.Configuration.GetValue("UseExternalMqttBroker", false);
 
+// Fake device with a fixed id (see HomelabBrain.DeviceSimulator), so DeviceConfig's REST
+// API can be exercised end-to-end during local dev without real hardware. Off by default
+// when testing against a real device on UseExternalMqttBroker (both would otherwise
+// answer MQTT config commands - only relevant if a real device happens to reuse the
+// simulator's fixed id "cafe0001", but disabling by default avoids the ambiguity).
+bool includeDeviceSimulator = builder.Configuration.GetValue("IncludeDeviceSimulator", !useExternalMqttBroker);
+
 var api = builder.AddProject<Projects.HomelabBrain_Api>("api")
     .WithEnvironment("DOTNET_ENVIRONMENT", builder.Environment.EnvironmentName);
 
@@ -19,6 +26,12 @@ if (!useExternalMqttBroker) {
 
     api.WithReference(mosquitto.GetEndpoint("mqtt"))
         .WaitFor(mosquitto);
+
+    if (includeDeviceSimulator) {
+        builder.AddProject<Projects.HomelabBrain_DeviceSimulator>("device-simulator")
+            .WithReference(mosquitto.GetEndpoint("mqtt"))
+            .WaitFor(mosquitto);
+    }
 }
 
 builder.Build().Run();

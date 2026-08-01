@@ -32,6 +32,11 @@
     <PackageVersion Include="MQTTnet.Extensions.ManagedClient" Version="4.3.4.1084" />
   </ItemGroup>
 
+  <ItemGroup Label="DeviceSimulator">
+    <PackageVersion Include="Microsoft.Extensions.Configuration" Version="10.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="10.0.0" />
+  </ItemGroup>
+
   <ItemGroup Label="Transitive - security patch overrides">
     <PackageVersion Include="MessagePack" Version="2.5.302" />
   </ItemGroup>
