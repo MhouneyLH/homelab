@@ -87,7 +87,7 @@ void handlePlantIdSet(const String &topic, JsonDocument &request, JsonDocument &
 
   config.plantId = request["plantId"].as<String>();
   saveDeviceConfig(config);
-  soilMoistureTopic = "plants/" + config.plantId + "/soil-moisture";
+  soilMoistureTopic = "devices/" + deviceId() + "/plants/" + config.plantId + "/soil-moisture";
 
   response["status"] = "ok";
   publishResponse(topic, response);

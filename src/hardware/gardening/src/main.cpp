@@ -90,10 +90,9 @@ void onMqttMessage(char *topic, byte *payload, unsigned int length)
   handleConfigCommand(String(topic), payloadStr);
 }
 
-double readSoilMoisturePercent()
+int readSoilMoistureRaw()
 {
-  int raw = analogRead(SOIL_MOISTURE_PIN);
-  return map(raw, 0, 1023, 0, 100);
+  return analogRead(SOIL_MOISTURE_PIN);
 }
 
 String isoTimestampNow()
@@ -109,7 +108,7 @@ String isoTimestampNow()
 void publishReading()
 {
   JsonDocument doc;
-  doc["valueInPercent"] = readSoilMoisturePercent();
+  doc["rawValue"] = readSoilMoistureRaw();
   doc["measuredAt"] = isoTimestampNow();
 
   char payload[128];
@@ -124,7 +123,7 @@ void setup()
   Serial.begin(115200);
 
   config = loadDeviceConfig();
-  soilMoistureTopic = "plants/" + config.plantId + "/soil-moisture";
+  soilMoistureTopic = "devices/" + deviceId() + "/plants/" + config.plantId + "/soil-moisture";
   mqttClientId = "d1-mini-gardening-" + deviceId();
 
   connectWiFi();
