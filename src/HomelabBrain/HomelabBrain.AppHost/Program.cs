@@ -13,7 +13,7 @@ bool useExternalMqttBroker = builder.Configuration.GetValue("UseExternalMqttBrok
 // API can be exercised end-to-end during local dev without real hardware. Off by default
 // when testing against a real device on UseExternalMqttBroker (both would otherwise
 // answer MQTT config commands - only relevant if a real device happens to reuse the
-// simulator's fixed id "cafe0001", but disabling by default avoids the ambiguity).
+// simulator's fixed id "simulated-device-123", but disabling by default avoids the ambiguity).
 bool includeDeviceSimulator = builder.Configuration.GetValue("IncludeDeviceSimulator", !useExternalMqttBroker);
 
 var api = builder.AddProject<Projects.HomelabBrain_Api>("api")

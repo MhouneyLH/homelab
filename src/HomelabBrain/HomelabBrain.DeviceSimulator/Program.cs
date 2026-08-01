@@ -8,7 +8,7 @@ using MQTTnet.Extensions.ManagedClient;
 // Fixed so it's a stable, memorable target while developing - see AppHost/Program.cs
 // for how this resource is wired up, and HomelabBrain.Api/HomelabBrain.Api.http for
 // example requests against it.
-const string DeviceId = "cafe0001";
+const string DeviceId = "simulated-device-123";
 const string PlantIdInitial = "plant-sim";
 
 IConfigurationRoot configuration = new ConfigurationBuilder()

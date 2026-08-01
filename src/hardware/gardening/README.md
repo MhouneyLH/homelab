@@ -1,11 +1,14 @@
 # Gardening Firmware
 
-D1 mini firmware publishing soil moisture readings over MQTT.
+[Wemos D1 mini](https://www.wemos.cc/en/latest/d1/d1_mini.html) (ESP8266) firmware, built with
+[PlatformIO](https://platformio.org/), publishing soil moisture readings over
+[MQTT](https://mqtt.org/) using [PubSubClient](https://pubsubclient.knolleary.net/) and
+[ArduinoJson](https://arduinojson.org/) (see [`platformio.ini`](./platformio.ini) for exact
+versions).
 
 ## Sensor
 
-Capacitive Soil Moisture Sensor v2.0
-(https://techtonions.com/products/capacitive-soil-moisture-sensor-v2.0).
+[Capacitive Soil Moisture Sensor v2.0](https://techtonions.com/products/capacitive-soil-moisture-sensor-v2.0).
 
 - 3 pins: `VCC`, `GND`, `AOUT` (analog output).
 - Operating voltage: 3.3V-5.5V. Wire `VCC` to D1 mini `3V3` (analog input tops out
@@ -22,13 +25,13 @@ Capacitive Soil Moisture Sensor v2.0
   3. Map `analogRead()` between those two points, inverted, to get 0-100%:
      `percent = map(raw, DRY_RAW, WET_RAW, 0, 100)`.
 
-`readSoilMoisturePercent()` in `src/main.cpp` currently uses placeholder
+`readSoilMoisturePercent()` in [`src/main.cpp`](./src/main.cpp) currently uses placeholder
 `map(raw, 0, 1023, 0, 100)` (not inverted, not calibrated) - replace with real
 `DRY_RAW`/`WET_RAW` constants once measured.
 
 ## D1 Mini Pinout
 
-Reference: https://lastminuteengineers.com/wemos-d1-mini-pinout-reference/
+Reference: [lastminuteengineers.com/wemos-d1-mini-pinout-reference](https://lastminuteengineers.com/wemos-d1-mini-pinout-reference/)
 
 | Label | GPIO    | Function                                    | Safe for general use |
 |-------|---------|----------------------------------------------|-----------------------|
@@ -55,10 +58,10 @@ Soil moisture sensor `AOUT` wired to `A0` (only analog input on this board).
 
 WiFi/MQTT/plant-id defaults are injected at compile time from `.env`
 (`INIT_WIFI_SSID`, `INIT_WIFI_PASSWORD`, `INIT_MQTT_BROKER_HOST`,
-`INIT_MQTT_BROKER_PORT`, `INIT_PLANT_ID`), loaded by `load_env.py`
-(a PlatformIO `pre:` extra script) directly into `CPPDEFINES` - no shell
-involved, so special characters in the WiFi password are safe. Copy
-`.env.example` to `.env`, fill in real values, then just build:
+`INIT_MQTT_BROKER_PORT`, `INIT_PLANT_ID`), loaded by [`load_env.py`](./load_env.py) (a
+[PlatformIO `pre:` extra script](https://docs.platformio.org/en/latest/scripting/actions.html))
+directly into `CPPDEFINES` - no shell involved, so special characters in the WiFi password are
+safe. Copy [`.env.example`](./.env.example) to `.env`, fill in real values, then just build:
 
 ```
 pio run
@@ -77,18 +80,28 @@ src/ConfigCommands.cpp     - MQTT config command handlers (set-wifi/broker/plant
 include/generated_config.h - gitignored, written by load_env.py from .env at build time
 ```
 
-On boot, `loadDeviceConfig()` reads `/config.json` from LittleFS; on first boot (no file yet) it
-seeds from the compile-time defaults in `generated_config.h` and persists them. From then on,
-flash contents - not the `.env` the firmware was built with - are the source of truth, so
-reflashing doesn't silently revert a config change made at runtime.
+- [`src/main.cpp`](./src/main.cpp)
+- [`src/DeviceConfig.cpp`](./src/DeviceConfig.cpp) /
+  [`include/DeviceConfig.h`](./include/DeviceConfig.h)
+- [`src/ConfigCommands.cpp`](./src/ConfigCommands.cpp) /
+  [`include/ConfigCommands.h`](./include/ConfigCommands.h)
+
+On boot, `loadDeviceConfig()` reads `/config.json` from
+[LittleFS](https://arduino-esp8266.readthedocs.io/en/latest/filesystem.html); on first boot (no
+file yet) it seeds from the compile-time defaults in `generated_config.h` and persists them. From
+then on, flash contents - not the `.env` the firmware was built with - are the source of truth,
+so reflashing doesn't silently revert a config change made at runtime.
 
 ## Runtime Reconfiguration
 
 The device subscribes to MQTT config commands under `devices/{chip-id}/config/` (chip-id from
 `ESP.getChipId()`, stable across reconfigs - unlike `plantId`, which is itself one of the fields
-that can change). See [`HomelabBrain README`](../../HomelabBrain/README.md#mqtt-topics) for the
-full topic list and the REST API (`HomelabBrain.DeviceConfig`) that drives this from the other
-end. In short:
+that can change). See the
+[HomelabBrain README](../../HomelabBrain/README.md#mqtt-topics) for the full topic list and the
+REST API ([`HomelabBrain.DeviceConfig`](../../HomelabBrain/HomelabBrain.DeviceConfig)) that drives
+this from the other end, and
+[`HomelabBrain.DeviceSimulator`](../../HomelabBrain/HomelabBrain.DeviceSimulator) for testing it
+without flashing real hardware. In short:
 
 - `wifi/set`, `broker/set`: persisted to flash, acknowledged over the *current* connection, then
   `ESP.restart()` - the new network/broker only takes effect after reboot.
@@ -98,4 +111,4 @@ end. In short:
 
 ## Serial Upload Permissions
 
-See `AGENTS.md`.
+See [`AGENTS.md`](./AGENTS.md).

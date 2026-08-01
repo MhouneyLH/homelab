@@ -7,7 +7,10 @@
 // http-client.private.env.json.example to http-client.private.env.json and
 // fill in real values.
 
-@deviceId = a1b2c3d4
+// simulated-device-123 = HomelabBrain.DeviceSimulator's fixed id - answers these for real when
+// AppHost is running (default IncludeDeviceSimulator=true). Swap for a real device's
+// chip-id to talk to actual hardware instead.
+@deviceId = simulated-device-123
 
 ### Liveness
 
