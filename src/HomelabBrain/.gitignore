@@ -1,6 +1,7 @@
 bin/
 obj/
 *.user
+http-client.private.env.json
 .vs/
 .idea/
 *.dotcover
