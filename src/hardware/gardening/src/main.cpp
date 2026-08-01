@@ -3,6 +3,7 @@
 #include <PubSubClient.h>
 #include <ArduinoJson.h>
 #include <time.h>
+#include "ConfigCommands.h"
 #include "DeviceConfig.h"
 #include "generated_config.h"
 
@@ -67,6 +68,7 @@ void connectMqtt()
     if (mqttClient.connect(mqttClientId.c_str()))
     {
       Serial.println("MQTT connected.");
+      subscribeConfigCommands();
     }
     else
     {
@@ -74,6 +76,18 @@ void connectMqtt()
       delay(1000);
     }
   }
+}
+
+void onMqttMessage(char *topic, byte *payload, unsigned int length)
+{
+  String payloadStr;
+  payloadStr.reserve(length);
+  for (unsigned int i = 0; i < length; i++)
+  {
+    payloadStr += (char)payload[i];
+  }
+
+  handleConfigCommand(String(topic), payloadStr);
 }
 
 double readSoilMoisturePercent()
@@ -116,6 +130,7 @@ void setup()
   connectWiFi();
   syncTime();
   mqttClient.setServer(config.mqttBrokerHost.c_str(), config.mqttBrokerPort);
+  mqttClient.setCallback(onMqttMessage);
   connectMqtt();
 }
 
