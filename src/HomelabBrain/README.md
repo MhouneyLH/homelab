@@ -74,7 +74,7 @@ that's a one-time setup step per clone, not something that happens automatically
 ### Running it
 
 ```
-dotnet run --project HomelabBrain.AppHost --launch-profile https
+dotnet run --project HomelabBrain.AppHost --launch-profile http
 ```
 
 Brings up the Aspire dashboard with the API, Mosquitto, and OTel collector, all wired together.

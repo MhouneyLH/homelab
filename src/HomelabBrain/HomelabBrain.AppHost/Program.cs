@@ -13,7 +13,7 @@ var api = builder.AddProject<Projects.HomelabBrain_Api>("api")
     .WithEnvironment("DOTNET_ENVIRONMENT", builder.Environment.EnvironmentName);
 
 if (!useExternalMqttBroker) {
-    var mosquitto = builder.AddContainer("mosquitto", "eclipse-mosquitto", "2.1.2")
+    var mosquitto = builder.AddContainer("mosquitto", "eclipse-mosquitto", "2.1.2-alpine")
         .WithEndpoint(port: 1883, targetPort: 1883, name: "mqtt")
         .WithEndpoint(port: 9001, targetPort: 9001, name: "websocket");
 

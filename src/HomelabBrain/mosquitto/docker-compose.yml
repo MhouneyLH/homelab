@@ -1,15 +1,15 @@
 services:
-  mosquitto:
-    image: eclipse-mosquitto:2.1.2
-    restart: unless-stopped
-    ports:
-      - "1883:1883"
-      - "9001:9001"
-    volumes:
-      - ./mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
-      - mosquitto-data:/mosquitto/data
-      - mosquitto-log:/mosquitto/log
+    mosquitto:
+        image: eclipse-mosquitto:2.1.2-alpine
+        restart: unless-stopped
+        ports:
+            - "1883:1883"
+            - "9001:9001"
+        volumes:
+            - ./mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+            - mosquitto-data:/mosquitto/data
+            - mosquitto-log:/mosquitto/log
 
 volumes:
-  mosquitto-data:
-  mosquitto-log:
+    mosquitto-data:
+    mosquitto-log:
