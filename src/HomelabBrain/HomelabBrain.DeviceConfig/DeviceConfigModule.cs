@@ -69,6 +69,13 @@ public static class DeviceConfigModule {
             .ProducesProblem(StatusCodes.Status502BadGateway)
             .ProducesProblem(StatusCodes.Status504GatewayTimeout);
 
+        group.MapGet("/", GetConfigEndpoint.Handle)
+            .WithName("GetDeviceConfig")
+            .WithSummary("Get the device's current configuration (excludes WiFi password)")
+            .Produces<GetConfigEndpoint.Response>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status502BadGateway)
+            .ProducesProblem(StatusCodes.Status504GatewayTimeout);
+
         return routes;
     }
 }
