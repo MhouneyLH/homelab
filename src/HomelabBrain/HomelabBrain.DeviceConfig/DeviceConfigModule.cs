@@ -61,6 +61,14 @@ public static class DeviceConfigModule {
             .ProducesProblem(StatusCodes.Status502BadGateway)
             .ProducesProblem(StatusCodes.Status504GatewayTimeout);
 
+        group.MapPost("/plant-id", SetPlantIdEndpoint.Handle)
+            .WithName("SetDevicePlantId")
+            .WithSummary("Set the device's plant id (applied live, no reboot)")
+            .Produces<SetPlantIdEndpoint.Response>(StatusCodes.Status200OK)
+            .ProducesValidationProblem()
+            .ProducesProblem(StatusCodes.Status502BadGateway)
+            .ProducesProblem(StatusCodes.Status504GatewayTimeout);
+
         return routes;
     }
 }
