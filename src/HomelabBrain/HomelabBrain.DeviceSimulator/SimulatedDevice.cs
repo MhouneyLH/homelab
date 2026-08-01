@@ -25,6 +25,16 @@ internal sealed class SimulatedDevice {
 
     public string ConfigTopicPrefix => $"devices/{DeviceId}/config/";
 
+    // Exact topics, not a wildcard on ConfigTopicPrefix - mirrors ConfigCommands.cpp's
+    // subscribeConfigCommands(). A wildcard would also match this device's own "<topic>/response"
+    // publishes, which start with the same prefix.
+    public IReadOnlyList<string> SubscriptionTopics => [
+        $"{ConfigTopicPrefix}wifi/set",
+        $"{ConfigTopicPrefix}broker/set",
+        $"{ConfigTopicPrefix}plant-id/set",
+        $"{ConfigTopicPrefix}get",
+    ];
+
     // Mirrors ConfigCommands.cpp's handleWifiSet/handleBrokerSet/handlePlantIdSet/handleGet -
     // same operation names, same response shape. Returns null for unrecognized operations.
     public JsonObject? Handle(string operation, JsonObject request) {
@@ -99,7 +109,7 @@ internal sealed class SimulatedDevice {
     [SuppressMessage("Security", "CA5394", Justification = "Fake sensor noise for local dev, not security-sensitive")]
     public static string BuildSoilMoistureReading() {
         JsonObject reading = new() {
-            ["valueInPercent"] = Math.Round(Random.Shared.NextDouble() * 100, 1),
+            ["rawValue"] = Random.Shared.Next(0, 1024),
             ["measuredAt"] = DateTimeOffset.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ", CultureInfo.InvariantCulture),
         };
         return reading.ToJsonString();

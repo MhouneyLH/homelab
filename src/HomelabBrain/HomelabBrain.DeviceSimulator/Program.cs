@@ -69,14 +69,16 @@ ManagedMqttClientOptions managedOptions = new ManagedMqttClientOptionsBuilder()
     .Build();
 
 await client.StartAsync(managedOptions).ConfigureAwait(false);
-await client.SubscribeAsync($"{device.ConfigTopicPrefix}#").ConfigureAwait(false);
+foreach (string topic in device.SubscriptionTopics) {
+    await client.SubscribeAsync(topic).ConfigureAwait(false);
+}
 
 Console.WriteLine($"[simulator] Connected to {brokerHost}:{brokerPort} as device \"{DeviceId}\".");
 Console.WriteLine($"[simulator] Try: GET/POST {{HostAddress}}/api/devices/{DeviceId}/config from HomelabBrain.Api.http");
 
 using PeriodicTimer timer = new(TimeSpan.FromSeconds(5));
 while (await timer.WaitForNextTickAsync().ConfigureAwait(false)) {
-    string soilMoistureTopic = $"plants/{device.PlantId}/soil-moisture";
+    string soilMoistureTopic = $"devices/{device.DeviceId}/plants/{device.PlantId}/soil-moisture";
     MqttApplicationMessage reading = new MqttApplicationMessageBuilder()
         .WithTopic(soilMoistureTopic)
         .WithPayload(SimulatedDevice.BuildSoilMoistureReading())

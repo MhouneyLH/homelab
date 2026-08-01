@@ -28,6 +28,11 @@ public static class PlantAnalyzerModule {
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
+        builder.Services.AddOptions<CalibrationOptions>()
+            .BindConfiguration(CalibrationOptions.SectionName)
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
         builder.Services.AddSingleton<IManagedMqttClient>(
             _ => new MqttFactory().CreateManagedMqttClient());
 

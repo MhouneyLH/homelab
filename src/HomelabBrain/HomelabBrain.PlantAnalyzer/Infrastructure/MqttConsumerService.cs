@@ -42,7 +42,10 @@ internal sealed partial class MqttConsumerService : BackgroundService {
             .Build();
 
         await _client.StartAsync(managedOptions).ConfigureAwait(false);
-        await _client.SubscribeAsync("plants/#").ConfigureAwait(false);
+        // Not "devices/#" - that would also match DeviceConfig's devices/{id}/config/... traffic
+        // on the same broker (harmless, MqttMessageParser would just reject it as unknown topic,
+        // but there's no reason to receive/parse it here at all).
+        await _client.SubscribeAsync("devices/+/plants/#").ConfigureAwait(false);
 
         LogConsumerStarted(_options.BrokerHost, _options.BrokerPort);
 
@@ -82,7 +85,7 @@ internal sealed partial class MqttConsumerService : BackgroundService {
         return Task.CompletedTask;
     }
 
-    [LoggerMessage(Level = LogLevel.Information, Message = "MQTT consumer started, subscribed to plants/# on {Host}:{Port}")]
+    [LoggerMessage(Level = LogLevel.Information, Message = "MQTT consumer started, subscribed to devices/+/plants/# on {Host}:{Port}")]
     private partial void LogConsumerStarted(string host, int port);
 
     [LoggerMessage(Level = LogLevel.Debug, Message = "Sensor reading: {Reading}")]
