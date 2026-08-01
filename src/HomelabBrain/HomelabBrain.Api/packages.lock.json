@@ -121,6 +121,13 @@
           "Polly.Core": "8.4.2"
         }
       },
+      "homelabbrain.deviceconfig": {
+        "type": "Project",
+        "dependencies": {
+          "MQTTnet": "[4.3.4.1084, )",
+          "MQTTnet.Extensions.ManagedClient": "[4.3.4.1084, )"
+        }
+      },
       "homelabbrain.plantanalyzer": {
         "type": "Project",
         "dependencies": {

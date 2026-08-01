@@ -4,6 +4,7 @@
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
     <ProjectReference Include="..\HomelabBrain.ServiceDefaults\HomelabBrain.ServiceDefaults.csproj" />
     <ProjectReference Include="..\HomelabBrain.PlantAnalyzer\HomelabBrain.PlantAnalyzer.csproj" />
+    <ProjectReference Include="..\HomelabBrain.DeviceConfig\HomelabBrain.DeviceConfig.csproj" />
   </ItemGroup>
 
 </Project>

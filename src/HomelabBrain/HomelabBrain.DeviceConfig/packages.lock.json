@@ -1,0 +1,22 @@
+{
+  "version": 2,
+  "dependencies": {
+    "net11.0": {
+      "MQTTnet": {
+        "type": "Direct",
+        "requested": "[4.3.4.1084, )",
+        "resolved": "4.3.4.1084",
+        "contentHash": "Ss5w/lZTGfO+m5oALOYKj/HpycDXRLZqbCmBhK7rar2DSVNIGu4MErI0J6UdBxG9pY/O2KfaDE53W9AzvDbbYw=="
+      },
+      "MQTTnet.Extensions.ManagedClient": {
+        "type": "Direct",
+        "requested": "[4.3.4.1084, )",
+        "resolved": "4.3.4.1084",
+        "contentHash": "GTqLoNJipmteoCimxIG/408ymRJm+3ZkIy9OeOwI8Cymuiy3RJvk+AQfo4cg+GBQex3x2W1+uZzofKUwggXRgw==",
+        "dependencies": {
+          "MQTTnet": "4.3.4.1084"
+        }
+      }
+    }
+  }
+}

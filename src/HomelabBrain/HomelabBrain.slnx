@@ -1,5 +1,6 @@
 <Solution>
   <Project Path="HomelabBrain.Api/HomelabBrain.Api.csproj" />
+  <Project Path="HomelabBrain.DeviceConfig/HomelabBrain.DeviceConfig.csproj" />
   <Project Path="HomelabBrain.PlantAnalyzer/HomelabBrain.PlantAnalyzer.csproj" />
   <Project Path="HomelabBrain.ServiceDefaults/HomelabBrain.ServiceDefaults.csproj" />
   <Project Path="HomelabBrain.AppHost/HomelabBrain.AppHost.csproj" />
