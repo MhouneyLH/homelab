@@ -24,6 +24,7 @@ This project helps me to continuously learn k8s and related technologies, and to
    - [Managing Persistent Storage](#managing-persistent-storage)
    - [Gramps Backup and Restore](#gramps-backup-and-restore)
    - [RBAC and access management](#rbac-and-access-management)
+   - [Secrets Management](#secrets-management)
 5. [Helpful Commands](#helpful-commands)
 6. [Development](#development)
    - [Working with talosctl](#working-with-talosctl)
@@ -316,6 +317,48 @@ App-specific RBAC should be co-located with the app or infrastructure component 
 #### How to grant access (example: read-only)
 
 The read-only example uses the cluster-wide role and user-specific binding defined in [src/k8s/rbac/resource-readers.yml](src/k8s/rbac/resource-readers.yml).
+
+### Secrets Management
+
+Real secret *values* never get committed to this repo - that's true everywhere in it, not just
+for one app. Two different mechanisms, depending on the situation:
+
+- **Plain `kubectl create secret` against the live cluster, name-only reference in git.** The
+  original approach, still used for anything created once and rarely touched (e.g.
+  [Harbor's admin password/secretKey](./src/k8s/apps/platform/harbor/README.md#secrets-not-committed-to-git)).
+  Simple, but "recreate the same secret" isn't reviewable, diffable, or reproducible from git
+  alone - someone has to remember it happened and how.
+- **[Sealed Secrets](https://github.com/bitnami/sealed-secrets)**, for anything else -
+  particularly per-app secrets (like an image-pull credential) that should live and travel with
+  that app's manifests. An in-cluster controller
+  ([`src/k8s/argocd-apps/sealed-secrets.yml`](./src/k8s/argocd-apps/sealed-secrets.yml),
+  [values](./src/k8s/apps/infrastructure/sealed-secrets/values.yml)) holds an asymmetric keypair;
+  you encrypt a secret locally with its public key via the `kubeseal` CLI, and the **encrypted**
+  `SealedSecret` object is what gets committed - safe to put in a public repo, since only the
+  controller's private key (never leaves the cluster) can decrypt it. ArgoCD applies it like any
+  other manifest; the controller decrypts it into a normal `Secret` in-cluster automatically.
+
+```bash
+# One-time: install kubeseal (match the version to the controller's appVersion, see the
+# chart version pinned in sealed-secrets.yml above)
+curl -sSL -o kubeseal.tar.gz \
+  https://github.com/bitnami/sealed-secrets/releases/download/v0.38.4/kubeseal-0.38.4-linux-amd64.tar.gz
+tar -xzf kubeseal.tar.gz kubeseal && sudo install kubeseal /usr/local/bin/kubeseal
+
+# Seal a secret (dry-run creates the plain Secret locally, never sent to the cluster as
+# plaintext; kubeseal encrypts it, only the *encrypted* SealedSecret gets applied/committed)
+kubectl create secret generic <name> -n <namespace> \
+  --from-literal=<key>=<value> --dry-run=client -o yaml \
+  | kubeseal --controller-name=sealed-secrets --controller-namespace=sealed-secrets \
+      --format yaml > <name>-sealed.yml
+
+kubectl apply -f <name>-sealed.yml   # or just commit it - ArgoCD will
+```
+
+**Back up the controller's private key** (`kubectl get secret -n sealed-secrets -l
+sealedsecrets.bitnami.com/sealed-secrets-key -o yaml > sealing-key-backup.yml`, store it
+somewhere safe, *outside* git) - lose it with no backup, and every `SealedSecret` ever committed
+becomes permanently undecryptable, cluster rebuild or not.
 
 ## Helpful Commands
 

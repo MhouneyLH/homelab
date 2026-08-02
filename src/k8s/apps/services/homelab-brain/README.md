@@ -28,12 +28,14 @@ is the GitOps-native equivalent - see the main
 [HomelabBrain.Api Dockerfile / Harbor push docs](../../platform/harbor/README.md) for the
 image-naming scheme this pairs with.
 
-## Pull secret (also not committed)
+## Pull secret (sealed, committed as `harbor-pull-secret-sealed.yml`)
 
-The `homelab-brain` Harbor project is private, so the cluster needs credentials to pull from it -
-created directly, referenced by name only via `imagePullSecrets` in `deployment.yml`. Use a
-Harbor **Robot Account** (scoped, revocable, purpose-built for exactly this), not a personal
-user account:
+The `homelab-brain` Harbor project is private, so the cluster needs credentials to pull from it,
+referenced by name via `imagePullSecrets` in `deployment.yml`. Uses a Harbor **Robot Account**
+(scoped, revocable, purpose-built for exactly this), not a personal user account - and is a
+[Sealed Secret](../../../../../README.md#secrets-management) rather than a plain
+`kubectl create secret`, so it's committed to git (encrypted) and travels with the rest of this
+app's manifests instead of living only as tribal knowledge of "someone ran a command once":
 
 ```bash
 # Create the robot account (pull-only on this project). "secret" in the response is shown
@@ -47,12 +49,17 @@ curl -u admin:<harbor-admin-password> -X POST \
     "permissions": [{"kind": "project", "namespace": "homelab-brain", "access": [{"resource": "repository", "action": "pull"}]}]
   }'
 
-# Username comes back as robot$homelab-brain+cluster-pull
-kubectl create secret docker-registry harbor-pull-secret \
+# Username comes back as robot$homelab-brain+cluster-pull. Seal it instead of creating it
+# directly - see main README's Secrets Management section for the kubeseal one-time setup.
+kubectl create secret docker-registry harbor-pull-secret -n services \
   --docker-server=<worker-node-ip>:30002 \
   --docker-username='robot$homelab-brain+cluster-pull' \
   --docker-password=<secret-from-response> \
-  -n services
+  --dry-run=client -o yaml \
+  | kubeseal --controller-name=sealed-secrets --controller-namespace=sealed-secrets \
+      --format yaml > harbor-pull-secret-sealed.yml
+
+# Add it to kustomization.yaml's resources, then commit + push like anything else.
 ```
 
 ## Node-level registry trust
