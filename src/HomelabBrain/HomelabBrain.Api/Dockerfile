@@ -1,6 +1,9 @@
 # syntax=docker/dockerfile:1
 # Build context must be src/HomelabBrain/ (not this directory) - HomelabBrain.Api references
-# sibling projects. From repo root: docker build -f HomelabBrain.Api/Dockerfile src/HomelabBrain
+# sibling projects, which COPY can only reach from within the context. From repo root:
+#   docker build -f src/HomelabBrain/HomelabBrain.Api/Dockerfile src/HomelabBrain
+# or, with CWD already src/HomelabBrain/:
+#   docker build -f HomelabBrain.Api/Dockerfile .
 
 FROM mcr.microsoft.com/dotnet/sdk:11.0-preview AS build
 WORKDIR /src
