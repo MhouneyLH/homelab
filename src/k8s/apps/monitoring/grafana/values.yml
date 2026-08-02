@@ -75,6 +75,8 @@ dashboards:
       url: https://raw.githubusercontent.com/MhouneyLH/homelab/master/src/k8s/apps/monitoring/grafana/dashboards/k8s_cluster_dashboard.json
     mosquitto:
       url: https://raw.githubusercontent.com/MhouneyLH/homelab/master/src/k8s/apps/monitoring/grafana/dashboards/mosquitto_dashboard.json
+    homelab-brain:
+      url: https://raw.githubusercontent.com/MhouneyLH/homelab/master/src/k8s/apps/monitoring/grafana/dashboards/homelab_brain_dashboard.json
     node-exporter:
       url: https://raw.githubusercontent.com/MhouneyLH/homelab/master/src/k8s/apps/monitoring/grafana/dashboards/node_exporter_dashboard.json
     prometheus:

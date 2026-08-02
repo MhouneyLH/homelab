@@ -15,3 +15,6 @@ data:
   Mqtt__BrokerPort: "1883"
   DeviceConfigMqtt__BrokerHost: mosquitto.services.svc.cluster.local
   DeviceConfigMqtt__BrokerPort: "1883"
+  # Cluster's central OTel Collector (../../monitoring/opentelemetry) - without this, metrics
+  # never leave the pod, since ServiceDefaults only exports OTLP when this is set.
+  OTEL_EXPORTER_OTLP_ENDPOINT: http://otelc-opentelemetry-collector.monitoring.svc.cluster.local:4317
