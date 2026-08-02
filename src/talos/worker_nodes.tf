@@ -20,6 +20,16 @@ resource "talos_machine_configuration_apply" "worker" {
         install = {
           disk = each.value.disk
         }
+        # Internal Harbor registry (see src/k8s/apps/platform/harbor) is plain HTTP - no TLS,
+        # since it's LAN-internal only. containerd refuses non-TLS registries by default, so
+        # this tells it to treat this specific endpoint as HTTP rather than attempting HTTPS.
+        registries = {
+          mirrors = {
+            "${each.value.ip}:30002" = {
+              endpoints = ["http://${each.value.ip}:30002"]
+            }
+          }
+        }
       }
     })
   ]
