@@ -192,6 +192,7 @@ substitute your own from `.env` / `get_node_information.sh`.
 | Mosquitto   | `services`   | 30001 / 30782 | MQTT broker + websocket, for LAN devices (e.g. the gardening firmware)  |
 | Traefik     | `traefik`    | 30081 / 30444 | Ingress controller's own HTTP/HTTPS entrypoints, plus 31883 for MQTT    |
 | Harbor      | `platform`   | 30002         | Container registry - internal-only for now, no ingress/TLS/public DNS  |
+| HomelabBrain| `services`   | 30003         | REST API ([more](./src/k8s/apps/services/homelab-brain))               |
 
 Check current state any time: `kubectl get svc -A --field-selector spec.type=NodePort` (see
 [Helpful Commands](#helpful-commands)).
