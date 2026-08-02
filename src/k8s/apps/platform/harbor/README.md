@@ -12,10 +12,11 @@ communication" NodePort table) - no ingress, no TLS, no public DNS. Reachable fr
 the LAN:
 
 - UI/registry: `http://<worker-node-ip>:30002`
-- Docker/OCI login: `docker login <worker-node-ip>:30002`
-- Username `admin`, password: see `harbor-admin-password` Secret (below) - **not** the chart's
-  documented default (`Harbor12345`), that was only used for the first ~15 minutes before this
-  was locked down (see "What Was Broken" below).
+- Admin login (`admin`, password: see `harbor-admin-password` Secret below - **not** the chart's
+  documented default `Harbor12345`, that only lasted the first ~15 minutes before this was locked
+  down, see "What Was Broken" below) is for cluster administration only: creating projects,
+  creating user accounts, rotating secrets. Not for day-to-day pushing - see "Pushing images"
+  below for that.
 
 ### Pushing images from your local machine
 
@@ -46,6 +47,26 @@ curl -u admin:<harbor-admin-password> -X POST \
   -d '{"project_name": "homelab-brain", "public": false}'
 ```
 
+**3. Get a personal account.** Push with your own Harbor user, not the `admin` account -
+`admin` is for cluster administration (creating projects, rotating secrets), not day-to-day
+pushing. There's no self-service signup by design - ask whoever administers Harbor (currently:
+ask me) to create an account and add it as a project member. Done as `admin` via:
+
+```bash
+# Create the user
+curl -u admin:<harbor-admin-password> -X POST \
+  http://<worker-node-ip>:30002/api/v2.0/users \
+  -H "Content-Type: application/json" \
+  -d '{"username": "<their-username>", "email": "<their-email>", "password": "<their-password>", "realname": "<their-name>"}'
+
+# Grant push access on the homelab-brain project (role_id 2 = Developer - push/pull,
+# no delete; use 3 for Maintainer if they also need to delete images)
+curl -u admin:<harbor-admin-password> -X POST \
+  http://<worker-node-ip>:30002/api/v2.0/projects/homelab-brain/members \
+  -H "Content-Type: application/json" \
+  -d '{"role_id": 2, "member_user": {"username": "<their-username>"}}'
+```
+
 **Naming scheme**: `<registry>/<project>/<repository>:<tag>`. Project = access-control/quota
 boundary, one per app (`homelab-brain`, not one Harbor project per image). Repository = image
 name inside the project - keep it short since the project already scopes it (`api`, not
@@ -60,7 +81,7 @@ docker build -f HomelabBrain.Api/Dockerfile \
   -t <worker-node-ip>:30002/homelab-brain/api:$SHA \
   -t <worker-node-ip>:30002/homelab-brain/api:latest \
   .
-docker login <worker-node-ip>:30002
+docker login <worker-node-ip>:30002  # your personal account, not admin
 docker push <worker-node-ip>:30002/homelab-brain/api:$SHA
 docker push <worker-node-ip>:30002/homelab-brain/api:latest
 ```
