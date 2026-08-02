@@ -7,11 +7,68 @@ chart values from this directory's [`values.yml`](./values.yml)).
 
 ## Access
 
-- UI/registry: `https://harbor.lucas-festung.dynv6.net`
-- Docker/OCI login: `docker login harbor.lucas-festung.dynv6.net`
+Internal-only for now (see main [README](../../../../../README.md)'s "Managing internal
+communication" NodePort table) - no ingress, no TLS, no public DNS. Reachable from any device on
+the LAN:
+
+- UI/registry: `http://<worker-node-ip>:30002`
+- Docker/OCI login: `docker login <worker-node-ip>:30002`
 - Username `admin`, password: see `harbor-admin-password` Secret (below) - **not** the chart's
   documented default (`Harbor12345`), that was only used for the first ~15 minutes before this
   was locked down (see "What Was Broken" below).
+
+### Pushing images from your local machine
+
+Two one-time setup steps, then a normal `docker build`/`push`.
+
+**1. Trust the registry.** It's plain HTTP (no TLS, since it's internal-only) - Docker refuses to
+talk to a registry over HTTP unless told to. Linux native Docker:
+
+```bash
+sudo tee /etc/docker/daemon.json <<'EOF'
+{
+  "insecure-registries": ["<worker-node-ip>:30002"]
+}
+EOF
+sudo systemctl restart docker
+```
+
+If `/etc/docker/daemon.json` already has content, merge the `insecure-registries` key in rather
+than overwriting the file. Docker Desktop: Settings -> Docker Engine, edit the JSON there, Apply
+& Restart.
+
+**2. Create the project.** Pushing doesn't auto-create it:
+
+```bash
+curl -u admin:<harbor-admin-password> -X POST \
+  http://<worker-node-ip>:30002/api/v2.0/projects \
+  -H "Content-Type: application/json" \
+  -d '{"project_name": "homelab-brain", "public": false}'
+```
+
+**Naming scheme**: `<registry>/<project>/<repository>:<tag>`. Project = access-control/quota
+boundary, one per app (`homelab-brain`, not one Harbor project per image). Repository = image
+name inside the project - keep it short since the project already scopes it (`api`, not
+`homelab-brain-api`). Tag with the git short SHA for traceability rather than relying only on
+`:latest` (mutable, not traceable to a commit) - push both, `:latest` as a floating convenience
+pointer alongside the immutable SHA tag:
+
+```bash
+cd src/HomelabBrain
+SHA=$(git rev-parse --short HEAD)
+docker build -f HomelabBrain.Api/Dockerfile \
+  -t <worker-node-ip>:30002/homelab-brain/api:$SHA \
+  -t <worker-node-ip>:30002/homelab-brain/api:latest \
+  .
+docker login <worker-node-ip>:30002
+docker push <worker-node-ip>:30002/homelab-brain/api:$SHA
+docker push <worker-node-ip>:30002/homelab-brain/api:latest
+```
+
+Build context must be `src/HomelabBrain/` (not `HomelabBrain.Api/`) - the Dockerfile `COPY`s
+sibling projects it references, which only works if they're inside the build context. See
+[`HomelabBrain.Api/Dockerfile`](../../../../HomelabBrain/HomelabBrain.Api/Dockerfile)'s own
+top comment for both invocation forms (from repo root vs. from `src/HomelabBrain/`).
 
 ## Secrets (not committed to git)
 
@@ -75,9 +132,12 @@ thing:
    correctly from the start (see "Secrets" above for how to change them without a wipe once real
    data exists).
 
-Ingress/TLS: `expose.ingress.className: traefik` (cluster's ingress controller, not the chart's
+**Ingress/TLS, tried then reverted.** First pass exposed Harbor publicly:
+`expose.ingress.className: traefik` (cluster's ingress controller, not the chart's
 nginx-oriented defaults) + `cert-manager.io/cluster-issuer: letsencrypt-prod-issuer` annotation +
 `expose.tls.certSource: secret` with `expose.tls.secret.secretName` - same
 [cert-manager](https://cert-manager.io/)+[Traefik](https://traefik.io/) HTTP-01 pattern
-[`grampsweb`](https://gramps.lucas-festung.dynv6.net) already uses in this cluster
-(`kubectl get ingress grampsweb -n services -o yaml` to compare).
+[`grampsweb`](https://gramps.lucas-festung.dynv6.net) uses in this cluster
+(`kubectl get ingress grampsweb -n services -o yaml` to compare). Deliberately reverted to
+internal-only `expose.type: nodePort` (see "Access" above) - not ready to expose this publicly
+yet. Re-adding the ingress config above is enough to switch back, once that changes.
