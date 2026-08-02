@@ -11,7 +11,7 @@ the ArgoCD `Application` at
 `deployment.yml` commits a placeholder: `image: homelab-brain/api:placeholder`. The real
 registry host (your worker node's IP) and tag are set directly on the live ArgoCD `Application`
 object instead - never committed, same reasoning as
-[Harbor's secrets](../../platform/harbor/README.md#secrets-not-committed-to-git):
+[Harbor's secrets](../../platform/harbor/README.md#secrets):
 
 ```bash
 kubectl patch application homelab-brain -n argocd --type merge -p \
@@ -27,6 +27,21 @@ there's nowhere for a local `.env` to be read from. Kustomize + a live-only Appl
 is the GitOps-native equivalent - see the main
 [HomelabBrain.Api Dockerfile / Harbor push docs](../../platform/harbor/README.md) for the
 image-naming scheme this pairs with.
+
+**Why not a [Sealed Secret](../../../../../README.md#secrets-management) for this, like
+`harbor-pull-secret`?** Hard no, not a missing feature - a `SealedSecret` decrypts into a
+`Secret`, and a `Secret` can only populate the things Kubernetes explicitly allows sourcing from
+one (env vars, volume mounts, `imagePullSecrets` by name). The container `image:` field isn't
+one of those - it has to be a literal string in the manifest. There's also no bridging it with
+custom tooling: Kustomize resolves the image override client-side in ArgoCD's repo-server,
+*before* anything is applied to the cluster, while a `SealedSecret`'s plaintext only exists
+*after* the in-cluster controller decrypts it - Kustomize would only ever see encrypted
+ciphertext, never the real value.
+
+If manually re-running the `kubectl patch` above every push gets old, the actual answer is
+[Argo CD Image Updater](https://argocd-image-updater.readthedocs.io/) - watches a registry
+(Harbor supported) for new tags and updates the Application's image parameter automatically.
+Separate concern from secrets/encryption though - not currently set up here.
 
 ## Pull secret (sealed, committed as `harbor-pull-secret-sealed.yml`)
 
