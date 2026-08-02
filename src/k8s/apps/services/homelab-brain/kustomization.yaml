@@ -8,6 +8,7 @@ resources:
   - deployment.yml
   - service.yml
   - configmap.yml
+  - harbor-pull-secret-sealed.yml
 
 # No `images:` override here on purpose - the real registry host/tag is set on the ArgoCD
 # Application object directly (kubectl patch), never committed. See README.md.
