@@ -324,10 +324,9 @@ Real secret *values* never get committed to this repo - that's true everywhere i
 for one app. Two different mechanisms, depending on the situation:
 
 - **Plain `kubectl create secret` against the live cluster, name-only reference in git.** The
-  original approach, still used for anything created once and rarely touched (e.g.
-  [Harbor's admin password/secretKey](./src/k8s/apps/platform/harbor/README.md#secrets-not-committed-to-git)).
-  Simple, but "recreate the same secret" isn't reviewable, diffable, or reproducible from git
-  alone - someone has to remember it happened and how.
+  original approach - now mostly superseded by Sealed Secrets below (see Harbor's and Grafana's
+  admin credentials, both migrated). Simple, but "recreate the same secret" isn't reviewable,
+  diffable, or reproducible from git alone - someone has to remember it happened and how.
 - **[Sealed Secrets](https://github.com/bitnami/sealed-secrets)**, for anything else -
   particularly per-app secrets (like an image-pull credential) that should live and travel with
   that app's manifests. An in-cluster controller
@@ -358,7 +357,25 @@ kubectl apply -f <name>-sealed.yml   # or just commit it - ArgoCD will
 **Back up the controller's private key** (`kubectl get secret -n sealed-secrets -l
 sealedsecrets.bitnami.com/sealed-secrets-key -o yaml > sealing-key-backup.yml`, store it
 somewhere safe, *outside* git) - lose it with no backup, and every `SealedSecret` ever committed
-becomes permanently undecryptable, cluster rebuild or not.
+becomes permanently undecryptable, cluster rebuild or not. Whoever has that file can decrypt
+every secret ever committed here, so treat it like the master password it effectively is - not
+just another local file.
+
+#### Decrypting locally / disaster recovery
+
+A `SealedSecret` from git **cannot** be decrypted without the controller's private key - not by
+design flaw, that's the entire point. Two situations:
+
+- **Normal case, controller is running**: you don't decrypt it yourself at all. Apply the
+  `SealedSecret`, the in-cluster controller decrypts it into a real `Secret` automatically. To
+  read that resulting `Secret`'s value: `kubectl get secret <name> -n <ns> -o jsonpath='{.data.<key>}' | base64 -d`.
+- **Disaster recovery, no controller** (rebuilding the cluster from scratch, or decrypting
+  offline): restore the backed-up key first -
+  `kubectl apply -f sealing-key-backup.yml -n sealed-secrets` *before* the controller starts, so
+  it reuses the old keypair instead of generating a new one - then every `SealedSecret` ever
+  committed decrypts normally again. Or skip the cluster entirely:
+  `kubeseal --recovery-unseal --recovery-private-key sealing-key-backup.yml < some-sealed-secret.yml`
+  decrypts a single file locally, no running controller needed.
 
 ## Helpful Commands
 
