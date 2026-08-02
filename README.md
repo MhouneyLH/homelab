@@ -24,11 +24,12 @@ This project helps me to continuously learn k8s and related technologies, and to
    - [Managing Persistent Storage](#managing-persistent-storage)
    - [Gramps Backup and Restore](#gramps-backup-and-restore)
    - [RBAC and access management](#rbac-and-access-management)
-5. [Development](#development)
+5. [Helpful Commands](#helpful-commands)
+6. [Development](#development)
    - [Working with talosctl](#working-with-talosctl)
-6. [Learnings](#learnings)
+7. [Learnings](#learnings)
    - [Ventoy _Fiebertraum_](#ventoy-fiebertraum)
-7. [Additional References](#additional-references)
+8. [Additional References](#additional-references)
 
 ## Actual Running Usable Applications
 
@@ -176,7 +177,24 @@ dig +short gramps.lucas-festung.dynv6.net A
 
 ### Managing internal communication
 
-TBD
+Some applications aren't meant to be reachable from the outside world (yet, or ever) - those get
+exposed as a `NodePort` `Service` instead of going through the [ingress
+setup](#being-accessible-from-the-outside-world). Reachable from any device on the LAN at
+`<node-ip>:<node-port>` - node IPs aren't published in this repo (see [Hardware](#hardware)), so
+substitute your own from `.env` / `get_node_information.sh`.
+
+| Application | Namespace    | Node Port(s)  | Notes                                                                   |
+| ----------- | ------------ | ------------- | ------------------------------------------------------------------------ |
+| ArgoCD      | `argocd`     | 30080 / 30443 | GitOps UI                                                                |
+| n8n         | `automation` | 30712         | Automation tool ([more](#n8n))                                          |
+| Prometheus  | `monitoring` | 30090         | Metrics                                                                  |
+| Grafana     | `monitoring` | 30070         | Dashboards ([more](#grafana))                                           |
+| Mosquitto   | `services`   | 30001 / 30782 | MQTT broker + websocket, for LAN devices (e.g. the gardening firmware)  |
+| Traefik     | `traefik`    | 30081 / 30444 | Ingress controller's own HTTP/HTTPS entrypoints, plus 31883 for MQTT    |
+| Harbor      | `platform`   | 30002         | Container registry - internal-only for now, no ingress/TLS/public DNS  |
+
+Check current state any time: `kubectl get svc -A --field-selector spec.type=NodePort` (see
+[Helpful Commands](#helpful-commands)).
 
 ### Managing Persistent Storage
 
@@ -297,6 +315,26 @@ App-specific RBAC should be co-located with the app or infrastructure component 
 #### How to grant access (example: read-only)
 
 The read-only example uses the cluster-wide role and user-specific binding defined in [src/k8s/rbac/resource-readers.yml](src/k8s/rbac/resource-readers.yml).
+
+## Helpful Commands
+
+Quick reference for things reached for often when operating the cluster.
+
+```bash
+# List every NodePort service across all namespaces (see the table above)
+kubectl get svc -A --field-selector spec.type=NodePort
+
+# Force ArgoCD to re-sync an Application right now instead of waiting for its poll interval
+kubectl annotate application <app-name> -n argocd argocd.argoproj.io/refresh=hard --overwrite
+
+# Check an ArgoCD Application's sync/health status and the reason it's out of sync, if any
+kubectl get application <app-name> -n argocd -o jsonpath='{.status.sync.status} {.status.health.status}{"\n"}{.status.operationState.message}{"\n"}'
+
+# Pods, logs, and events for a namespace - the usual first three checks when something's broken
+kubectl get pods -n <namespace>
+kubectl logs -n <namespace> <pod-name>
+kubectl describe pod -n <namespace> <pod-name>
+```
 
 Set the `subjects.name` in the RoleBinding to the username (CN) you issue in the client cert. The current file uses a placeholder (`homelab-read-all-user`) that should be replaced with a real username.
 
