@@ -1,0 +1,48 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: homelab-brain
+  namespace: services
+  labels:
+    app: homelab-brain
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: homelab-brain
+  template:
+    metadata:
+      labels:
+        app: homelab-brain
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: hl-worker-01
+      imagePullSecrets:
+        - name: harbor-pull-secret
+      containers:
+        # image is a Kustomize placeholder - the real registry host/tag is set on the ArgoCD
+        # Application object directly (kubectl patch), never committed here. See README.md.
+        - name: homelab-brain-api
+          image: homelab-brain/api:placeholder
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: homelab-brain-config
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              memory: 256Mi

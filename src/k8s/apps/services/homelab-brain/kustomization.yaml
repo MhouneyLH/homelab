@@ -1,0 +1,13 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: services
+
+resources:
+  - deployment.yml
+  - service.yml
+  - configmap.yml
+
+# No `images:` override here on purpose - the real registry host/tag is set on the ArgoCD
+# Application object directly (kubectl patch), never committed. See README.md.

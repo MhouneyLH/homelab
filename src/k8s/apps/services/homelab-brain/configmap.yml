@@ -1,0 +1,17 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: homelab-brain-config
+  namespace: services
+  labels:
+    app: homelab-brain
+data:
+  # Same standalone Mosquitto broker mosquitto.services already exposes on the LAN for the
+  # gardening firmware - in-cluster pods reach it via this Service DNS name (kubelet/containerd
+  # image pulls can't use this, see README, but pod-to-pod traffic goes through the pod network
+  # and CoreDNS just fine).
+  Mqtt__BrokerHost: mosquitto.services.svc.cluster.local
+  Mqtt__BrokerPort: "1883"
+  DeviceConfigMqtt__BrokerHost: mosquitto.services.svc.cluster.local
+  DeviceConfigMqtt__BrokerPort: "1883"

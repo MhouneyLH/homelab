@@ -1,0 +1,18 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: homelab-brain
+  namespace: services
+  labels:
+    app: homelab-brain
+spec:
+  type: NodePort
+  selector:
+    app: homelab-brain
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+      nodePort: 30003
+      protocol: TCP
