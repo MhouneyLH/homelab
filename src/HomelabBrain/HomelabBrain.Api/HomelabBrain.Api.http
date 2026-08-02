@@ -1,16 +1,12 @@
-// VS Code: install the "httpYac" extension (anweber.vscode-httpyac), not the
-// more popular "REST Client" - REST Client doesn't read http-client.env.json
-// (it wants env vars in .vscode/settings.json instead), httpYac does.
-// Pick an environment via the status bar / "httpYac: Select Environment".
-// Secrets (wifiSsid/wifiPassword) live in the gitignored
-// http-client.private.env.json, auto-merged over http-client.env.json - copy
-// http-client.private.env.json.example to http-client.private.env.json and
-// fill in real values.
+// getting started on VSCode:
+/// - install https://marketplace.visualstudio.com/items?itemName=anweber.vscode-httpyac
+/// - pick environment via status bar / "httpYac: Select Environment"
 
 // simulated-device-123 = HomelabBrain.DeviceSimulator's fixed id - answers these for real when
 // AppHost is running (default IncludeDeviceSimulator=true). Swap for a real device's
 // chip-id to talk to actual hardware instead.
-@deviceId = simulated-device-123
+# @deviceId = simulated-device-123
+@deviceId = 000bfc24
 
 ### Liveness
 
@@ -44,7 +40,7 @@ POST {{HostAddress}}/api/devices/{{deviceId}}/config/broker
 Content-Type: application/json
 
 {
-  "host": "10.0.129.7",
+  "host": "localhost",
   "port": 1883
 }
 
@@ -54,5 +50,5 @@ POST {{HostAddress}}/api/devices/{{deviceId}}/config/plant-id
 Content-Type: application/json
 
 {
-  "plantId": "basil-1"
+  "plantId": "schnittlauch-1"
 }
