@@ -337,6 +337,14 @@ for one app. Two different mechanisms, depending on the situation:
   controller's private key (never leaves the cluster) can decrypt it. ArgoCD applies it like any
   other manifest; the controller decrypts it into a normal `Secret` in-cluster automatically.
 
+**Creating one, in short**: 1) create the secret *locally only* (`--dry-run=client`, never sent
+to the cluster as plaintext) 2) pipe it through `kubeseal`, which encrypts it against the
+controller's public key 3) commit the resulting encrypted `SealedSecret` file - that's the only
+thing that ever touches git or the cluster in plaintext form. No live "real" secret object is
+ever created by this process itself; whether one exists afterward depends on whether you also
+`kubectl apply` the sealed file (which makes the controller decrypt it in-cluster) or leave that
+to ArgoCD.
+
 ```bash
 # One-time: install kubeseal (match the version to the controller's appVersion, see the
 # chart version pinned in sealed-secrets.yml above)
