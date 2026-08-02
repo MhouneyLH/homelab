@@ -2,21 +2,21 @@
 nodeSelector:
   kubernetes.io/hostname: hl-worker-01
 
-externalURL: https://harbor.lucas-festung.dynv6.net
+# Internal-only for now (see main README's "Managing internal communication" NodePort table) -
+# no ingress/TLS/public DNS. Node IPs are treated as sensitive in this repo (see main README,
+# .env), so this stays a placeholder here - swap <worker-node-ip> for the real one locally, same
+# as with any other NodePort service.
+externalURL: http://<worker-node-ip>:30002
 
 expose:
-  ingress:
-    hosts:
-      core: harbor.lucas-festung.dynv6.net
-    className: traefik
-    annotations:
-      cert-manager.io/cluster-issuer: letsencrypt-prod-issuer
-      traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
-      traefik.ingress.kubernetes.io/router.tls: "true"
+  type: nodePort
   tls:
-    certSource: secret
-    secret:
-      secretName: harbor-tls
+    enabled: false
+  nodePort:
+    ports:
+      http:
+        port: 80
+        nodePort: 30002
 
 # Real values live in Secrets created directly in the cluster (not committed here) - see
 # README.md next to this file for how they were created and why.
