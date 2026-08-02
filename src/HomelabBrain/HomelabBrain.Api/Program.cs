@@ -14,10 +14,10 @@ var app = builder.Build();
 
 app.MapDefaultEndpoints();
 
-if (app.Environment.IsDevelopment()) {
-    app.MapOpenApi();
-    app.MapScalarApiReference();
-}
+// Not gated to Development: this is an internal-only service (no public ingress/TLS, see
+// src/k8s/apps/services/homelab-brain), so there's no exposure risk in always serving docs.
+app.MapOpenApi();
+app.MapScalarApiReference();
 
 app.UseHttpsRedirection();
 app.MapPlantAnalyzer();
