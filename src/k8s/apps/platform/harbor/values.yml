@@ -1,3 +1,17 @@
 ---
 nodeSelector:
   kubernetes.io/hostname: hl-worker-01
+
+persistence:
+  persistentVolumeClaim:
+    registry:
+      storageClass: local-path
+    jobservice:
+      jobLog:
+        storageClass: local-path
+    database:
+      storageClass: local-path
+    redis:
+      storageClass: local-path
+    trivy:
+      storageClass: local-path
