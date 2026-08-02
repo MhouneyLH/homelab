@@ -20,6 +20,10 @@ spec:
       targetRevision: master
       ref: values
 
+    - repoURL: https://github.com/MhouneyLH/homelab.git
+      targetRevision: master
+      path: src/k8s/apps/platform/harbor/sealed-secrets
+
   destination:
     server: https://kubernetes.default.svc
     namespace: platform

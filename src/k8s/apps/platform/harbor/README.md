@@ -97,17 +97,26 @@ sibling projects it references, which only works if they're inside the build con
 [`HomelabBrain.Api/Dockerfile`](../../../../HomelabBrain/HomelabBrain.Api/Dockerfile)'s own
 top comment for both invocation forms (from repo root vs. from `src/HomelabBrain/`).
 
-## Secrets (not committed to git)
+## Secrets
 
-Two values the Helm chart needs are real secrets, so they're created directly in the cluster and
-only *referenced by name* in `values.yml` (`existingSecretAdminPassword`,
-`existingSecretSecretKey`) - never as plaintext in a file that goes to GitHub:
+Two values the Helm chart needs are real secrets, referenced by name only in `values.yml`
+(`existingSecretAdminPassword`, `existingSecretSecretKey`) - the actual values live as
+[Sealed Secrets](../../../../../README.md#secrets-management), committed (encrypted) at
+[`sealed-secrets/`](./sealed-secrets), applied via the third `sources[]` entry in
+[`harbor.yml`](../../../argocd-apps/harbor.yml) (the ArgoCD `Application`, not the
+[Sealed Secrets controller](../../infrastructure/sealed-secrets)). To rotate either, or seed a
+fresh cluster from scratch:
 
-```
+```bash
 kubectl create secret generic harbor-secret-key -n platform \
-  --from-literal=secretKey="<16-char random string>"
+  --from-literal=secretKey="<16-char random string>" --dry-run=client -o yaml \
+  | kubeseal --controller-name=sealed-secrets --controller-namespace=sealed-secrets \
+      --format yaml > sealed-secrets/harbor-secret-key-sealed.yml
+
 kubectl create secret generic harbor-admin-password -n platform \
-  --from-literal=HARBOR_ADMIN_PASSWORD="<random password>"
+  --from-literal=HARBOR_ADMIN_PASSWORD="<random password>" --dry-run=client -o yaml \
+  | kubeseal --controller-name=sealed-secrets --controller-namespace=sealed-secrets \
+      --format yaml > sealed-secrets/harbor-admin-password-sealed.yml
 ```
 
 `secretKey` **must be exactly 16 characters** (chart requirement - it's an AES key). It encrypts
@@ -124,9 +133,13 @@ changing the Secret or `values.yml` afterward has no effect on an already-bootst
   get re-encrypted under the new key. Disruptive to those integrations specifically, not a full
   wipe.
 
-If these two Secrets don't exist yet (fresh cluster, restored from backup without them, etc.),
-Harbor's `core`/`jobservice`/`registry` pods will `CrashLoopBackOff` on missing secret volume
-mounts - create them first, before syncing the ArgoCD `Application`.
+Both `SealedSecret`s sync automatically along with everything else in `harbor.yml` - no separate
+manual step, unlike before. One real caveat: they only decrypt against the *same*
+[Sealed Secrets](../../infrastructure/sealed-secrets) controller keypair they were encrypted
+with. A genuinely fresh cluster (new controller, new keypair) can't decrypt these committed files
+at all until the old keypair is restored too - see the key-backup note in the main README's
+Secrets Management section. Without a matching key, Harbor's `core`/`jobservice`/`registry` pods
+will `CrashLoopBackOff` on missing secret volume mounts, same as before this existed.
 
 ## What Was Broken (first setup)
 
