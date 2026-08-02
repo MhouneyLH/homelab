@@ -1,0 +1,32 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: harbor
+  namespace: argocd
+spec:
+  project: default
+
+  sources:
+    - repoURL: https://helm.goharbor.io
+      chart: harbor
+      targetRevision: "1.19.1"
+      helm:
+        releaseName: harbor
+        valueFiles:
+          - $values/src/k8s/apps/platform/harbor/values.yml
+
+    - repoURL: https://github.com/MhouneyLH/homelab.git
+      targetRevision: master
+      ref: values
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: platform
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
