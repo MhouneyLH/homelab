@@ -67,6 +67,12 @@ curl -u admin:<harbor-admin-password> -X POST \
   -d '{"role_id": 2, "member_user": {"username": "<their-username>"}}'
 ```
 
+This is for a human pushing from their own machine. For something automated pulling images
+(a Deployment's `imagePullSecrets`, CI, etc.), use a **Robot Account** instead, not a personal
+user - scoped to exactly the permission needed (usually pull-only) and independently revocable.
+See [`homelab-brain`'s README](../../services/homelab-brain/README.md#pull-secret-also-not-committed)
+for the exact commands.
+
 **Naming scheme**: `<registry>/<project>/<repository>:<tag>`. Project = access-control/quota
 boundary, one per app (`homelab-brain`, not one Harbor project per image). Repository = image
 name inside the project - keep it short since the project already scopes it (`api`, not

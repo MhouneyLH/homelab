@@ -31,13 +31,27 @@ image-naming scheme this pairs with.
 ## Pull secret (also not committed)
 
 The `homelab-brain` Harbor project is private, so the cluster needs credentials to pull from it -
-create the Secret directly, referenced by name only via `imagePullSecrets` in `deployment.yml`:
+created directly, referenced by name only via `imagePullSecrets` in `deployment.yml`. Use a
+Harbor **Robot Account** (scoped, revocable, purpose-built for exactly this), not a personal
+user account:
 
 ```bash
+# Create the robot account (pull-only on this project). "secret" in the response is shown
+# once - save it immediately, Harbor never shows it again.
+curl -u admin:<harbor-admin-password> -X POST \
+  http://<worker-node-ip>:30002/api/v2.0/projects/homelab-brain/robots \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "cluster-pull",
+    "duration": -1,
+    "permissions": [{"kind": "project", "namespace": "homelab-brain", "access": [{"resource": "repository", "action": "pull"}]}]
+  }'
+
+# Username comes back as robot$homelab-brain+cluster-pull
 kubectl create secret docker-registry harbor-pull-secret \
   --docker-server=<worker-node-ip>:30002 \
-  --docker-username=<your-harbor-username> \
-  --docker-password=<your-harbor-password> \
+  --docker-username='robot$homelab-brain+cluster-pull' \
+  --docker-password=<secret-from-response> \
   -n services
 ```
 
