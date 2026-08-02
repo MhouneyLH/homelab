@@ -2,6 +2,28 @@
 nodeSelector:
   kubernetes.io/hostname: hl-worker-01
 
+externalURL: https://harbor.lucas-festung.dynv6.net
+
+expose:
+  ingress:
+    hosts:
+      core: harbor.lucas-festung.dynv6.net
+    className: traefik
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt-prod-issuer
+      traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+      traefik.ingress.kubernetes.io/router.tls: "true"
+  tls:
+    certSource: secret
+    secret:
+      secretName: harbor-tls
+
+# Real values live in Secrets created directly in the cluster (not committed here) - see
+# README.md next to this file for how they were created and why.
+existingSecretSecretKey: harbor-secret-key
+existingSecretAdminPassword: harbor-admin-password
+existingSecretAdminPasswordKey: HARBOR_ADMIN_PASSWORD
+
 persistence:
   persistentVolumeClaim:
     registry:
