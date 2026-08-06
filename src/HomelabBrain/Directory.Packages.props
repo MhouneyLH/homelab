@@ -14,8 +14,8 @@
   </ItemGroup>
 
   <ItemGroup Label="Aspire Service Defaults">
-    <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="9.3.0" />
-    <PackageVersion Include="Microsoft.Extensions.ServiceDiscovery" Version="9.3.0" />
+    <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="10.8.0" />
+    <PackageVersion Include="Microsoft.Extensions.ServiceDiscovery" Version="10.8.0" />
   </ItemGroup>
 
   <ItemGroup Label="OpenTelemetry">
@@ -28,7 +28,7 @@
   </ItemGroup>
 
   <ItemGroup Label="MQTT">
-    <PackageVersion Include="MQTTnet" Version="4.3.4.1084" />
+    <PackageVersion Include="MQTTnet" Version="5.2.0.1603" />
     <PackageVersion Include="MQTTnet.Extensions.ManagedClient" Version="4.3.4.1084" />
   </ItemGroup>
 
@@ -38,6 +38,6 @@
   </ItemGroup>
 
   <ItemGroup Label="Transitive - security patch overrides">
-    <PackageVersion Include="MessagePack" Version="2.5.302" />
+    <PackageVersion Include="MessagePack" Version="3.1.8" />
   </ItemGroup>
 </Project>
